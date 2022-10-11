@@ -1,0 +1,48 @@
+
+# There are two sets of commented out options.
+#
+# Set 1 is Unstable formatter features that are not available except in the Nightly build of the formatter.
+#
+# Set 2 is Stable features, but they are disabled because the formatter has some non-configurable
+# behavior that is undesireable for this code base (or at least to the author).
+#
+# The formatter is completely disabled, and may be enabled when its behavior has more optionality.
+
+edition = "2021"
+disable_all_formatting = true
+
+
+# Set 1 - Unstable
+
+# https://github.com/rust-lang/rustfmt/issues/3369
+# combine_control_expr = false
+
+# https://github.com/rust-lang/rustfmt/issues/3358
+# fn_single_line = false
+
+# https://github.com/rust-lang/rustfmt/issues/3374
+# force_multiline_blocks = true
+
+# https://github.com/rust-lang/rustfmt/issues/3348
+# format_code_in_doc_comments = true
+
+# https://github.com/rust-lang/rustfmt/issues/5081
+# hex_literal_case = "Upper"
+
+# https://github.com/rust-lang/rustfmt/issues/3361
+# imports_layout = "Vertical"
+
+# https://github.com/rust-lang/rustfmt/issues/3363
+# reorder_impl_items = true
+
+# https://github.com/rust-lang/rustfmt/issues/5083
+# group_imports = "StdExternalCrate"
+
+
+# Set 2 - Stable
+
+# chain_width = 50
+# newline_style = "Native"
+# struct_lit_width = 0
+# use_field_init_shorthand = true
+# use_try_shorthand = true
