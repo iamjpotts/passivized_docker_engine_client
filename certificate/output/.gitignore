@@ -1,0 +1,7 @@
+# For CA, only need public key after server certificate is created
+ca.csr
+ca-key.pem
+
+# For server, only need private key and chained public key
+testregistry.locallan.csr
+testregistry.locallan.pem
