@@ -1,0 +1,33 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Cargo test
+    strategy:
+      matrix:
+        os:
+          - macOS-latest
+          - ubuntu-20.04
+          - windows-2022
+        toolchain:
+          - 1.64
+          - beta
+          - nightly
+          - stable
+        exclude:
+          - os: macOS-latest
+            toolchain: beta
+          - os: macOS-latest
+            toolchain: nightly
+          - os: windows-2022
+            toolchain: beta
+          - os: windows-2022
+            toolchain: nightly
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - run: cargo test
