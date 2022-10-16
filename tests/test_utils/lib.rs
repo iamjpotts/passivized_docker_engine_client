@@ -5,9 +5,7 @@ use std::path::PathBuf;
 
 pub mod certs;
 pub mod content_type;
-pub mod files;
 pub mod images;
-pub mod logging;
 
 pub fn label_key() -> String {
     PathBuf::from(file!())

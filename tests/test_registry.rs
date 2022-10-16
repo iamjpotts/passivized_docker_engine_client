@@ -36,7 +36,7 @@ async fn test_push_to_authenticated_registry() {
     use openssl::pkey::{PKey, Private};
     use tar::Archive;
     use test_utils::images::{dind, web, registry};
-    use test_utils::{logging, random_name};
+    use test_utils::random_name;
     use test_utils::certs::{certificate_from_pem_file, extract_ip_address_from_cert_def};
 
     use passivized_docker_engine_client::DockerEngineClient;
@@ -44,6 +44,7 @@ async fn test_push_to_authenticated_registry() {
     use passivized_docker_engine_client::model::{NetworkIpam, NetworkIpamConfig, RegistryAuth};
     use passivized_docker_engine_client::model::MountMode::ReadOnly;
     use passivized_docker_engine_client::requests::{CreateContainerRequest, CreateNetworkRequest, EndpointConfig, HostConfig, NetworkingConfig};
+    use passivized_test_support::logging;
 
     // Must match apache/generate.sh
     const HTPASSWD_USERNAME: &str = "foo";
@@ -76,7 +77,8 @@ async fn test_push_to_authenticated_registry() {
             )
         );
 
-    let registry_ip = extract_ip_address_from_cert_def();
+    let registry_ip = extract_ip_address_from_cert_def()
+        .await;
 
     let network_create_response = public.networks().create(network_request)
         .await;
@@ -191,7 +193,8 @@ async fn test_push_to_authenticated_registry() {
 
     info!("registry url: {registry_url}");
 
-    let registry_ca = certificate_from_pem_file(&ca_pem);
+    let registry_ca = certificate_from_pem_file(&ca_pem)
+        .await;
 
     let registry_tls = TlsConnector::builder()
         .add_root_certificate(registry_ca)

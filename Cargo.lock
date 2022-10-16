@@ -624,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "passivized_docker_engine_client"
-version = "0.0.2"
+version = "0.0.3-alpha.1"
 dependencies = [
  "backoff",
  "base64",
@@ -639,6 +639,7 @@ dependencies = [
  "mockito",
  "native-tls",
  "openssl",
+ "passivized_test_support",
  "rand",
  "serde",
  "serde_json",
@@ -649,6 +650,16 @@ dependencies = [
  "thiserror",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "passivized_test_support"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4924a7bd124db14010cef0c45ef6d72bfa0ddfafbc8816631006d8c18736f713"
+dependencies = [
+ "log",
+ "simple_logger",
 ]
 
 [[package]]

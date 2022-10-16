@@ -13,13 +13,14 @@ use const_str::concat;
 use http::StatusCode;
 use log::{info, warn};
 use test_utils::images::{EXPECTED_PLATFORM, hello, web};
-use test_utils::{logging, random_name};
+use test_utils::random_name;
 
 use passivized_docker_engine_client::DockerEngineClient;
 use passivized_docker_engine_client::errors::DecUseError;
 use passivized_docker_engine_client::model::{StreamKind, Unit};
 use passivized_docker_engine_client::requests::{CreateContainerRequest, Filters, HostConfig, InspectContainerArgs, ListContainersRequest};
 use passivized_docker_engine_client::responses::{FileSystemChangeKind, Network};
+use passivized_test_support::logging;
 
 #[cfg(not(windows))]
 use passivized_docker_engine_client::requests::WaitCondition;

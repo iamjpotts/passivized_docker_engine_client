@@ -7,13 +7,14 @@ use log::*;
 
 use passivized_docker_engine_client::DockerEngineClient;
 use passivized_docker_engine_client::requests::{CreateContainerRequest, WaitCondition};
+use passivized_test_support::cli;
 use example_utils::errors::ExampleError;
 
 const IMAGE_NAME: &str = "hello-world";
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    example_utils::cli::run(run).await
+    cli::run(run).await
 }
 
 /// Run the famous "hello-world" container, and log its output.

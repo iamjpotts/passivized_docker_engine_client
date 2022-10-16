@@ -5,10 +5,9 @@ use std::str::FromStr;
 use native_tls::Certificate;
 use serde_json::{from_slice, Value};
 
-use super::files::read_all_bytes;
-
-pub fn certificate_from_pem_file<F: AsRef<Path>>(file_name: F) -> Certificate {
-    let bytes = read_all_bytes(file_name)
+pub async fn certificate_from_pem_file<F: AsRef<Path>>(file_name: F) -> Certificate {
+    let bytes = tokio::fs::read(file_name)
+        .await
         .unwrap();
 
     let cert = Certificate::from_pem(&bytes)
@@ -17,7 +16,7 @@ pub fn certificate_from_pem_file<F: AsRef<Path>>(file_name: F) -> Certificate {
     cert
 }
 
-pub fn extract_ip_address_from_cert_def() -> Ipv4Addr {
+pub async fn extract_ip_address_from_cert_def() -> Ipv4Addr {
     let cert_def_file = PathBuf::from(file!())
         .parent()
         .unwrap()
@@ -28,7 +27,8 @@ pub fn extract_ip_address_from_cert_def() -> Ipv4Addr {
         .join("certificate")
         .join("testregistry.locallan.json");
 
-    let cert_def_json = read_all_bytes(cert_def_file)
+    let cert_def_json = tokio::fs::read(cert_def_file)
+        .await
         .unwrap();
 
     let parsed: Value = from_slice(&cert_def_json)
