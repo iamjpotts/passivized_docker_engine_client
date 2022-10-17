@@ -35,6 +35,8 @@ async fn test_push_to_authenticated_registry() {
     use log::info;
     use openssl::pkey::{PKey, Private};
     use tar::Archive;
+    use tempfile::tempdir;
+
     use test_utils::images::{dind, web, registry};
     use test_utils::random_name;
     use test_utils::certs::{certificate_from_pem_file, extract_ip_address_from_cert_def};
@@ -44,9 +46,10 @@ async fn test_push_to_authenticated_registry() {
     use passivized_docker_engine_client::model::{NetworkIpam, NetworkIpamConfig, RegistryAuth};
     use passivized_docker_engine_client::model::MountMode::ReadOnly;
     use passivized_docker_engine_client::requests::{CreateContainerRequest, CreateNetworkRequest, EndpointConfig, HostConfig, NetworkingConfig};
+    use passivized_htpasswd::Algo::BcryptMinCost;
+    use passivized_htpasswd::Htpasswd;
     use passivized_test_support::logging;
 
-    // Must match apache/generate.sh
     const HTPASSWD_USERNAME: &str = "foo";
     const HTPASSWD_PASSWORD: &str = "bar";
 
@@ -117,6 +120,9 @@ async fn test_push_to_authenticated_registry() {
     info!("Subnet addr: {}", block_addr);
     info!("Subnet size: {}", block_size);
 
+    let tmp = tempdir()
+        .unwrap();
+
     let project_root = PathBuf::from(file!())
         .parent()
         .unwrap()
@@ -124,15 +130,20 @@ async fn test_push_to_authenticated_registry() {
         .unwrap()
         .to_path_buf();
 
-    let htpasswd = project_root
-        .join("apache")
-        .join("output")
+    let htpasswd = tmp
+        .path()
         .join("htpasswd")
-        .canonicalize()
-        .unwrap()
         .to_str()
         .unwrap()
         .to_string();
+
+    let mut passwords = Htpasswd::new();
+    passwords.set_with(BcryptMinCost, HTPASSWD_USERNAME, HTPASSWD_PASSWORD)
+        .unwrap();
+
+    tokio::fs::write(&htpasswd, passwords.to_string().as_bytes())
+        .await
+        .unwrap();
 
     let output = project_root
         .join("certificate")
@@ -171,6 +182,7 @@ async fn test_push_to_authenticated_registry() {
         .env("REGISTRY_HTTP_TLS_CERTIFICATE=/secrets/server.crt")
         .env("REGISTRY_HTTP_TLS_KEY=/secrets/server.key")
         .host_config(HostConfig::default()
+            .auto_remove()
             .mount(htpasswd, "/secrets/htpasswd", ReadOnly)
             .mount(&server_crt, "/secrets/server.crt", ReadOnly)
             .mount(server_key, "/secrets/server.key", ReadOnly)
@@ -215,6 +227,7 @@ async fn test_push_to_authenticated_registry() {
         .image(format!("{}:{}", dind::IMAGE, dind::TAG))
         .expose_port(format!("{}/tcp", dind::PORT))
         .host_config(HostConfig::default()
+            .auto_remove()
             .privileged()
             .mount(ca_pem, format!("/etc/docker/certs.d/{}/ca.crt", registry_ip), ReadOnly)
             .network_mode(NETWORK_NAME)
@@ -405,19 +418,11 @@ async fn test_push_to_authenticated_registry() {
         .is_some();
     assert!(found);
 
-    public.container(&registry.id).stop()
+    public.container(registry.id).stop()
         .await
         .unwrap();
 
-    public.container(registry.id).remove()
-        .await
-        .unwrap();
-
-    public.container(&dind.id).stop()
-        .await
-        .unwrap();
-
-    public.container(dind.id).remove()
+    public.container(dind.id).stop()
         .await
         .unwrap();
 
