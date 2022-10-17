@@ -3,6 +3,7 @@ mod example_utils;
 
 use std::process::ExitCode;
 use passivized_docker_engine_client::{DockerEngineClient};
+use passivized_test_support::cli;
 use log::*;
 use example_utils::errors::ExampleError;
 
@@ -10,7 +11,7 @@ const PRINT_LIMIT: usize = 10;
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    example_utils::cli::run(run).await
+    cli::run(run).await
 }
 
 async fn run() -> Result<(), ExampleError> {

@@ -7,13 +7,14 @@ use log::*;
 
 use passivized_docker_engine_client::DockerEngineClient;
 use passivized_docker_engine_client::requests::{CreateContainerRequest, WaitCondition};
+use passivized_test_support::cli;
 use example_utils::errors::ExampleError;
 
 const IMAGE_NAME: &str = "busybox";
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    example_utils::cli::run(run).await
+    cli::run(run).await
 }
 
 /// Run the BusyBox container with a file listing command, and get the file listing.

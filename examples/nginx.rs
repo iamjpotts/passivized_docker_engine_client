@@ -6,6 +6,7 @@ use log::*;
 
 use passivized_docker_engine_client::DockerEngineClient;
 use passivized_docker_engine_client::requests::CreateContainerRequest;
+use passivized_test_support::cli;
 use example_utils::errors::ExampleError;
 
 const IMAGE_NAME: &str = "nginx";
@@ -13,7 +14,7 @@ const IMAGE_TAG: &str = "1.20";
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    example_utils::cli::run(run).await
+    cli::run(run).await
 }
 
 async fn run() -> Result<(), ExampleError> {
