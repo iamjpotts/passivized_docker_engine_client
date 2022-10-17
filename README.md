@@ -102,7 +102,5 @@ without having to explicitly set any `TlsConnector` configuration.
 
 ## Testing Infrastructure
 
-[CI](.github/workflows/ci.yml) uses GitHub Actions.
-
-* [Password file for Temporary Docker Registry](apache/README.md)
+* [GitHub actions for CI](.github/workflows/ci.yml)
 * [Certificates for Temporary Docker Registry](certificate/README.md)
