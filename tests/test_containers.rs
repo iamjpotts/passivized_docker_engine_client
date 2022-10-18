@@ -6,7 +6,6 @@ mod test_utils;
 
 use std::collections::HashMap;
 use std::time::Duration;
-use example_utils::docker::extract_ip_address;
 use example_utils::retry::wait_for_http_server;
 
 use const_str::concat;
@@ -142,7 +141,7 @@ async fn test_get_changed_file_list() {
         .await
         .unwrap();
 
-    let ip = extract_ip_address(&inspected)
+    let ip = inspected.first_ip_address()
         .unwrap();
 
     if let Err(e) = wait_for_http_server(&format!("http://{}", ip)).await {

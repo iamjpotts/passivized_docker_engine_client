@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct GraphDriver {
 
     #[serde(rename = "Name")]
@@ -13,7 +13,7 @@ pub struct GraphDriver {
 }
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct Health {
 
     #[serde(rename = "Status")]
@@ -28,7 +28,7 @@ pub struct Health {
 }
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct HealthCheckResult {
 
     #[serde(rename = "Start")]
@@ -46,7 +46,7 @@ pub struct HealthCheckResult {
 }
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct State {
 
     #[serde(rename = "Status")]
@@ -85,7 +85,7 @@ pub struct State {
 }
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct MountPoint {
 
     #[serde(rename = "Type")]
