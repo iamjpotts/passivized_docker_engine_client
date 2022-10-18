@@ -50,7 +50,8 @@ async fn run() -> Result<(), ExampleError> {
     let inspected = dec.container(&container.id).inspect()
         .await?;
 
-    let ip = example_utils::docker::extract_ip_address(&inspected)?;
+    let ip = inspected.first_ip_address()
+        .ok_or(ExampleError::NoIp())?;
 
     let url = format!("http://{}", ip);
 

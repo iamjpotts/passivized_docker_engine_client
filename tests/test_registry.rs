@@ -28,7 +28,6 @@ async fn test_push_to_authenticated_registry() {
     use std::net::Ipv4Addr;
     use std::path::PathBuf;
 
-    use example_utils::docker::extract_ip_address;
     use example_utils::retry::wait_for_https_server;
     use http::StatusCode;
     use hyper_tls::native_tls::{Certificate, Identity, TlsConnector};
@@ -245,7 +244,7 @@ async fn test_push_to_authenticated_registry() {
         .await
         .unwrap();
 
-    let dind_ip = extract_ip_address(&inspected_dind)
+    let dind_ip = inspected_dind.first_ip_address()
         .unwrap();
 
     let dind_url = format!("https://{}:{}", dind_ip, dind::PORT);

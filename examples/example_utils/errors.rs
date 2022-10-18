@@ -20,8 +20,8 @@ pub enum ExampleError {
     #[error("Hyper http error: {0}")]
     HyperHttp(hyper::http::Error),
 
-    #[error("{0}")]
-    Message(String),
+    #[error("Did not find an IP address")]
+    NoIp(),
 
     #[error("TLS error: {0}")]
     Tls(native_tls::Error),

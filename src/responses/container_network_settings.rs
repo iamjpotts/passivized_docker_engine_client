@@ -6,7 +6,7 @@ use crate::imp::serde::dz_hashmap_of_nullable;
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerCreate
 /// and https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 pub struct Network {
 
     #[serde(rename = "IPAMConfig", skip_serializing_if = "Option::is_none")]
@@ -51,7 +51,7 @@ pub struct Network {
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerCreate
 /// and https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct NetworkSettings {
 
     #[serde(rename = "Ports", default, deserialize_with = "dz_hashmap_of_nullable", skip_serializing_if = "HashMap::is_empty")]
@@ -60,4 +60,80 @@ pub struct NetworkSettings {
     #[serde(rename = "Networks")]
     pub networks: HashMap<String, Network>
 
+}
+
+impl NetworkSettings {
+
+    /// Get the first ip address of the first network, without regard
+    /// to what kind of network it is on.
+    ///
+    /// Useful for simple cases in controlled environments, like automated tests.
+    pub fn first_ip_address(&self) -> Option<&str> {
+        self.networks
+            .values()
+            .map(|n| n.ip_address.as_str())
+            .find(|ip| !ip.is_empty())
+    }
+}
+
+#[cfg(test)]
+mod test_inspect_container_response {
+
+    mod test_first_ip_address {
+        use std::collections::HashMap;
+        use crate::responses::{Network, NetworkSettings};
+
+        #[test]
+        fn no_networks() {
+            let response = NetworkSettings::default();
+
+            assert_eq!(None, response.first_ip_address());
+        }
+
+        #[test]
+        fn one_network_one_ip() {
+            let settings = NetworkSettings {
+                networks: HashMap::from([
+                    (
+                        "a".into(),
+                        Network {
+                            ip_address: "4.3.2.1".into(),
+                            ..Network::default()
+                        }
+                    )
+                ]),
+                ..NetworkSettings::default()
+            };
+
+            assert_eq!("4.3.2.1", settings.first_ip_address().unwrap());
+        }
+
+        // Other networks have no ip addresses
+        #[test]
+        fn multiple_networks_one_ip() {
+            let settings = NetworkSettings {
+                networks: HashMap::from([
+                    (
+                        "a".into(),
+                        Network::default()
+                    ),
+                    (
+                        "b".into(),
+                        Network {
+                            ip_address: "5.4.3.2".into(),
+                            ..Network::default()
+                        }
+                    ),
+                    (
+                        "c".into(),
+                        Network::default()
+                    ),
+                ]),
+                ..NetworkSettings::default()
+            };
+
+            assert_eq!("5.4.3.2", settings.first_ip_address().unwrap());
+        }
+
+    }
 }

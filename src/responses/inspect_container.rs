@@ -8,7 +8,7 @@ use crate::responses::NetworkSettings;
 use crate::responses::inspect_container_detail::{GraphDriver, MountPoint, State};
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct InspectContainerResponse {
 
     #[serde(rename = "Id")]
@@ -87,8 +87,20 @@ pub struct InspectContainerResponse {
     pub network_settings: NetworkSettings
 }
 
+impl InspectContainerResponse {
+
+    /// Get the first ip address of the first network, without regard
+    /// to what kind of network it is on.
+    ///
+    /// Useful for simple cases in controlled environments, like automated tests.
+    pub fn first_ip_address(&self) -> Option<&str> {
+        self.network_settings.first_ip_address()
+    }
+
+}
+
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct InspectedContainerConfig {
 
     #[serde(rename = "Hostname")]
@@ -165,7 +177,7 @@ pub struct InspectedContainerConfig {
 }
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct InspectedContainerHostConfig {
 
     #[serde(rename = "NetworkMode")]
