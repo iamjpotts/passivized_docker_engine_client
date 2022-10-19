@@ -7,6 +7,8 @@ use log::*;
 use passivized_docker_engine_client::DockerEngineClient;
 use passivized_docker_engine_client::requests::CreateContainerRequest;
 use passivized_test_support::cli;
+use passivized_test_support::http_status_tests::is_success;
+use passivized_test_support::waiter::wait_for_http_server;
 use example_utils::errors::ExampleError;
 
 const IMAGE_NAME: &str = "nginx";
@@ -55,7 +57,7 @@ async fn run() -> Result<(), ExampleError> {
 
     let url = format!("http://{}", ip);
 
-    let response = example_utils::retry::wait_for_http_server(&url)
+    let response = wait_for_http_server(url, is_success())
         .await?;
 
     info!("{}", response);
