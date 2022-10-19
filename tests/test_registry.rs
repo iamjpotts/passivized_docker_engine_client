@@ -28,7 +28,6 @@ async fn test_push_to_authenticated_registry() {
     use std::net::Ipv4Addr;
     use std::path::PathBuf;
 
-    use example_utils::retry::wait_for_https_server;
     use http::StatusCode;
     use hyper_tls::native_tls::{Certificate, Identity, TlsConnector};
     use log::info;
@@ -47,7 +46,9 @@ async fn test_push_to_authenticated_registry() {
     use passivized_docker_engine_client::requests::{CreateContainerRequest, CreateNetworkRequest, EndpointConfig, HostConfig, NetworkingConfig};
     use passivized_htpasswd::Algo::BcryptMinCost;
     use passivized_htpasswd::Htpasswd;
+    use passivized_test_support::http_status_tests::{equals, is_success};
     use passivized_test_support::logging;
+    use passivized_test_support::waiter::wait_for_https_server;
 
     const HTPASSWD_USERNAME: &str = "foo";
     const HTPASSWD_PASSWORD: &str = "bar";
@@ -212,7 +213,7 @@ async fn test_push_to_authenticated_registry() {
         .build()
         .unwrap();
 
-    wait_for_https_server(&registry_url, registry_tls)
+    wait_for_https_server(registry_url, registry_tls, is_success())
         .await
         .unwrap();
 
@@ -312,7 +313,7 @@ async fn test_push_to_authenticated_registry() {
         .build()
         .unwrap();
 
-    wait_for_https_server(&dind_url, tls.clone()).await.unwrap();
+    wait_for_https_server(dind_url, tls.clone(), equals(StatusCode::NOT_FOUND)).await.unwrap();
 
     let private_url = format!("https://{}:{}", dind_ip, dind::PORT);
     let private = DockerEngineClient::with_tls_config(&private_url, tls.clone())

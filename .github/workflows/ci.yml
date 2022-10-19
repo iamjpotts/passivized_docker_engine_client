@@ -22,21 +22,19 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-      # Install is very slow (5 min on Ubuntu, 10 minutes on Mac and Windows)
       - run: cargo install cargo-deny
       - run: cargo deny check
     timeout-minutes: 30
 
   test-mac:
-    # Mac-based run takes about 25 minutes end-to-end.
     name: Cargo test on Mac
     strategy:
+      # Only have one Mac build because Mac build setup is flaky
       matrix:
         os:
           - macOS-latest
         toolchain:
           - 1.64
-          - stable
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -53,7 +51,6 @@ jobs:
     timeout-minutes: 45
 
   test-nix:
-    # Ubuntu-based run takes about 8 minutes end-to-end.
     name: Cargo test on nix
     strategy:
       matrix:

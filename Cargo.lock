@@ -727,12 +727,20 @@ dependencies = [
 
 [[package]]
 name = "passivized_test_support"
-version = "0.0.3"
+version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4924a7bd124db14010cef0c45ef6d72bfa0ddfafbc8816631006d8c18736f713"
+checksum = "1a2ba50c835d95e7f8e9f420fcf97d43e76c534246bcea0d0f48d81fc6004ae0"
 dependencies = [
+ "backoff",
+ "http",
+ "hyper",
+ "hyper-tls",
  "log",
+ "native-tls",
+ "serial_test",
  "simple_logger",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

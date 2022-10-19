@@ -1,5 +1,6 @@
 use std::string::FromUtf8Error;
 use hyper_tls::native_tls;
+use passivized_test_support::http_errors::HttpError;
 
 use passivized_docker_engine_client::errors::{DecCreateError, DecUseError};
 
@@ -10,6 +11,9 @@ pub enum ExampleError {
 
     #[error("Docker engine client error: {0}")]
     DockerEngineClient(DecUseError),
+
+    #[error("HTTP error: {0}")]
+    Http(HttpError),
 
     #[error("I/O error: {0}")]
     Io(std::io::Error),
@@ -39,6 +43,12 @@ impl From<DecCreateError> for ExampleError {
 impl From<DecUseError> for ExampleError {
     fn from(other: DecUseError) -> Self {
         Self::DockerEngineClient(other)
+    }
+}
+
+impl From<HttpError> for ExampleError {
+    fn from(other: HttpError) -> Self {
+        Self::Http(other)
     }
 }
 

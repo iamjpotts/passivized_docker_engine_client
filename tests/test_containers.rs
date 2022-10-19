@@ -6,11 +6,11 @@ mod test_utils;
 
 use std::collections::HashMap;
 use std::time::Duration;
-use example_utils::retry::wait_for_http_server;
 
 use const_str::concat;
 use http::StatusCode;
 use log::{info, warn};
+use passivized_test_support::http_status_tests::is_success;
 use test_utils::images::{EXPECTED_PLATFORM, hello, web};
 use test_utils::random_name;
 
@@ -20,6 +20,7 @@ use passivized_docker_engine_client::model::{StreamKind, Unit};
 use passivized_docker_engine_client::requests::{CreateContainerRequest, Filters, HostConfig, InspectContainerArgs, ListContainersRequest};
 use passivized_docker_engine_client::responses::{FileSystemChangeKind, Network};
 use passivized_test_support::logging;
+use passivized_test_support::waiter::wait_for_http_server;
 
 #[cfg(not(windows))]
 use passivized_docker_engine_client::requests::WaitCondition;
@@ -144,7 +145,7 @@ async fn test_get_changed_file_list() {
     let ip = inspected.first_ip_address()
         .unwrap();
 
-    if let Err(e) = wait_for_http_server(&format!("http://{}", ip)).await {
+    if let Err(e) = wait_for_http_server(format!("http://{}", ip), is_success()).await {
         info!("Getting console output of failed container");
 
         let lines = String::from_iter(
