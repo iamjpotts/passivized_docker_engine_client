@@ -133,9 +133,9 @@ dependencies = [
 
 [[package]]
 name = "const-str"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa6c093bf913e73cd79b842dba96371d00e9989e8c54330526df63e38f83131f"
+checksum = "7c9bcff0990fc0845922231ea0e394e50298d38e5fd6218b37e16df43663a747"
 
 [[package]]
 name = "core-foundation"
