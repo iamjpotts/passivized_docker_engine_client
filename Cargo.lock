@@ -706,7 +706,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serial_test",
- "simple_logger 4.0.0",
+ "simple_logger",
  "tar",
  "tempfile",
  "thiserror",
@@ -727,9 +727,9 @@ dependencies = [
 
 [[package]]
 name = "passivized_test_support"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a2ba50c835d95e7f8e9f420fcf97d43e76c534246bcea0d0f48d81fc6004ae0"
+checksum = "3aa0e2f71393aa147e9d22eca51d0aa2170cd2ddf03e97b8db8056376fb2930f"
 dependencies = [
  "backoff",
  "http",
@@ -738,7 +738,7 @@ dependencies = [
  "log",
  "native-tls",
  "serial_test",
- "simple_logger 2.3.0",
+ "simple_logger",
  "thiserror",
  "tokio",
 ]
@@ -1019,18 +1019,6 @@ name = "similar"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62ac7f900db32bf3fd12e0117dd3dc4da74bc52ebaac97f39668446d89694803"
-
-[[package]]
-name = "simple_logger"
-version = "2.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48047e77b528151aaf841a10a9025f9459da80ba820e425ff7eb005708a76dc7"
-dependencies = [
- "atty",
- "log",
- "time",
- "winapi",
-]
 
 [[package]]
 name = "simple_logger"

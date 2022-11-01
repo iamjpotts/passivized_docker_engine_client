@@ -6,6 +6,26 @@ on:
     branches: [master]
 
 jobs:
+  clippy:
+    name: Cargo clippy
+    strategy:
+      matrix:
+        os:
+          - macOS-latest
+          - ubuntu-20.04
+          - windows-2022
+        toolchain:
+          - 1.64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          components: clippy
+          toolchain: ${{ matrix.toolchain }}
+      - run: cargo clippy -- -D warnings
+    timeout-minutes: 20
+
   deny:
     name: Cargo deny
     strategy:
@@ -40,12 +60,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          components: clippy
           toolchain: ${{ matrix.toolchain }}
       # Docker is not installed by default on Mac runners. Installing Docker takes about 10 minutes.
       - uses: docker-practice/actions-setup-docker@master
       - run: docker version
-      - run: cargo clippy
       - run: cargo test --no-run
       - run: cargo test --no-fail-fast
     timeout-minutes: 45
@@ -69,7 +87,6 @@ jobs:
           components: clippy
           toolchain: ${{ matrix.toolchain }}
       - run: docker version
-      - run: cargo clippy
       - run: cargo test --no-run
       - run: cargo test --no-fail-fast
     timeout-minutes: 30

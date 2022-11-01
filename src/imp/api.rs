@@ -1,12 +1,15 @@
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::hash::Hash;
 
 use const_str::concat;
+use serde::Serialize;
 
 use crate::client::DOCKER_ENGINE_VERSION;
 use crate::errors::DecCreateError;
 use crate::imp::url::UrlBuilder;
 use crate::imp::url_parser::is_http;
-use crate::requests::{CreateImageRequest, ListContainersRequest, RemoveContainerArgs, WaitCondition};
+use crate::requests::{BuildImageRequest, CreateImageRequest, ListContainersRequest, RemoveContainerArgs, WaitCondition};
 
 pub(crate) const DOCKER_ENGINE_VERSION_PATH: &str = concat!("/", DOCKER_ENGINE_VERSION);
 
@@ -403,6 +406,65 @@ pub(crate) struct DockerEngineApiPathImages {
 }
 
 impl DockerEngineApiPathImages {
+
+    fn sz_map<K, V>(value: &HashMap<K, V>) -> Result<Option<String>, serde_json::Error>
+    where
+        K: Serialize + Eq + Hash,
+        V: Serialize
+    {
+        if value.is_empty() {
+            Ok(None)
+        }
+        else {
+            serde_json::to_string(value)
+                .map(Some)
+        }
+    }
+
+    fn sz_vec<A>(value: &Vec<A>) -> Result<Option<String>, serde_json::Error>
+    where
+        A: Serialize
+    {
+        if value.is_empty() {
+            Ok(None)
+        }
+        else {
+            serde_json::to_string(value)
+                .map(Some)
+        }
+    }
+
+    pub fn build(&self, request: BuildImageRequest) -> Result<String, DockerEngineApiBuilderError> {
+        Ok(self.base.builder()?
+            .join("build")?
+            .query()
+            .option("dockerfile", request.dockerfile)
+            .append_all("t", request.tags)
+            .option("extrahosts", request.extra_hosts)
+            .option("remote", request.remote)
+            .option("q", request.quiet)
+            .option("nocache", request.no_cache)
+            .option("cachefrom", Self::sz_vec(&request.cache_from)?)
+            .option("pull", request.pull)
+            .option("rm", request.remove_intermediates)
+            .option("forcerm", request.force_remove_intermediates)
+            .option("memory", request.memory_limit)
+            .option("memswap", request.memory_and_swap)
+            .option("cpushares", request.cpu_shares)
+            .option("cpusetcpus", request.cpu_set_cpus)
+            .option("cpuperiod", request.cpu_period)
+            .option("cpuquota", request.cpu_quota)
+            .option("buildargs", Self::sz_map(&request.build_args)?)
+            .option("shmsize", request.shm_size_bytes)
+            .option("squash", request.squash)
+            .option("labels", Self::sz_map(&request.labels)?)
+            .option("networkmode", request.network_mode)
+            .option("platform", request.platform)
+            .option("target", request.target)
+            .option("outputs", request.outputs)
+            .to_string()
+        )
+    }
 
     pub fn create(&self, request: CreateImageRequest) -> Result<String, url::ParseError> {
         Ok(self.base.builder()?
@@ -842,7 +904,43 @@ mod test_docker_engine_api_path {
     }
 
     mod images {
-        use crate::imp::api::DockerEngineApi;
+        use crate::imp::api::{DOCKER_ENGINE_VERSION_PATH, DockerEngineApi};
+        use crate::requests::BuildImageRequest;
+
+        #[test]
+        pub fn build_typical() {
+            let api = DockerEngineApi::with_server("http://a".into())
+                .unwrap();
+
+            let request = BuildImageRequest::default()
+                .tag("foo:bar");
+
+            let actual = api.images().build(request)
+                .unwrap();
+
+            assert_eq!(format!("http://a{}/build?t=foo%3Abar", DOCKER_ENGINE_VERSION_PATH), actual);
+        }
+
+        #[test]
+        pub fn build_labeled() {
+            let api = DockerEngineApi::with_server("http://a".into())
+                .unwrap();
+
+            let request = BuildImageRequest::default()
+                .tag("qux")
+                .label("w", "x")
+                .label("y", "z");
+
+            let actual = api.images().build(request)
+                .unwrap();
+
+            assert!(actual.starts_with(&format!("http://a{}/build?t=qux&labels=%7B%22", DOCKER_ENGINE_VERSION_PATH)));
+
+            assert!(actual.contains('w'));
+            assert!(actual.contains('x'));
+            assert!(actual.contains('y'));
+            assert!(actual.contains('z'));
+        }
 
         #[test]
         pub fn json() {
@@ -992,4 +1090,58 @@ mod test_docker_engine_server {
         assert_eq!(concat!("http://foo", DOCKER_ENGINE_VERSION_PATH), api.base);
     }
 
+}
+
+#[cfg(test)]
+mod test_sz_map {
+    use std::collections::HashMap;
+    use super::DockerEngineApiPathImages;
+
+    #[test]
+    fn empty() {
+        let input: HashMap<String, i32> = HashMap::new();
+
+        let actual = DockerEngineApiPathImages::sz_map(&input)
+            .unwrap();
+
+        assert_eq!(None, actual);
+    }
+
+    #[test]
+    fn populated() {
+        let input: HashMap<i32, String> = HashMap::from([
+            (123, "a".into()),
+            (456, "b".into())
+        ]);
+
+        let actual = DockerEngineApiPathImages::sz_map(&input)
+            .unwrap();
+
+        assert!(actual.is_some());
+    }
+}
+
+#[cfg(test)]
+mod test_sz_vec {
+    use super::DockerEngineApiPathImages;
+
+    #[test]
+    fn empty() {
+        let input: Vec<u16> = Vec::new();
+
+        let actual = DockerEngineApiPathImages::sz_vec(&input)
+            .unwrap();
+
+        assert_eq!(None, actual);
+    }
+
+    #[test]
+    fn populated() {
+        let input: Vec<u128> = vec![12, 34];
+
+        let actual = DockerEngineApiPathImages::sz_vec(&input)
+            .unwrap();
+
+        assert!(actual.is_some());
+    }
 }

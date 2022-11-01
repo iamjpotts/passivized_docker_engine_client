@@ -1,3 +1,4 @@
+
 #[cfg(not(target_os = "macos"))]  // On Macs, containers run in a VM, and their network is inaccessible.
 #[cfg(not(windows))]  // No registry image available for Windows
 #[path = "../examples/example_utils/lib.rs"]
@@ -32,7 +33,7 @@ async fn test_push_to_authenticated_registry() {
     use hyper_tls::native_tls::{Certificate, Identity, TlsConnector};
     use log::info;
     use openssl::pkey::{PKey, Private};
-    use tar::Archive;
+    use tar::{Archive, Builder, Header};
     use tempfile::tempdir;
 
     use test_utils::images::{dind, web, registry};
@@ -41,9 +42,10 @@ async fn test_push_to_authenticated_registry() {
 
     use passivized_docker_engine_client::DockerEngineClient;
     use passivized_docker_engine_client::errors::DecUseError;
-    use passivized_docker_engine_client::model::{NetworkIpam, NetworkIpamConfig, RegistryAuth};
+    use passivized_docker_engine_client::model::{NetworkIpam, NetworkIpamConfig, RegistryAuth, Tar};
     use passivized_docker_engine_client::model::MountMode::ReadOnly;
-    use passivized_docker_engine_client::requests::{CreateContainerRequest, CreateNetworkRequest, EndpointConfig, HostConfig, NetworkingConfig};
+    use passivized_docker_engine_client::requests::{BuildImageRequest, CreateContainerRequest, CreateNetworkRequest, EndpointConfig, HostConfig, NetworkingConfig};
+    use passivized_docker_engine_client::responses::BuildImageResponseStreamItem;
     use passivized_htpasswd::Algo::BcryptMinCost;
     use passivized_htpasswd::Htpasswd;
     use passivized_test_support::http_status_tests::{equals, is_success};
@@ -392,12 +394,10 @@ async fn test_push_to_authenticated_registry() {
         .await
         .unwrap()
         .iter()
-        .filter(|item| item
+        .any(|item| item
             .repo_tags
             .contains(&format!("{}:{}", &private_image, private_tag))
-        )
-        .next()
-        .is_some();
+        );
     assert!(!found);
 
     // Pull, using authentication
@@ -410,13 +410,75 @@ async fn test_push_to_authenticated_registry() {
         .await
         .unwrap()
         .iter()
-        .filter(|item| item
+        .any(|item| item
             .repo_tags
             .contains(&format!("{}:{}", private_image, private_tag))
-        )
-        .next()
-        .is_some();
+        );
     assert!(found);
+
+    // Delete local tag again
+    private.images().untag(format!("{}:{}", private_image, private_tag))
+        .await
+        .unwrap();
+
+    // Build a new image using an image secured behind the registry
+    {
+        let mut builder = Builder::new(Vec::new());
+
+        let docker_file_text = format!("FROM {}:{}", private_image, private_tag);
+        let docker_file = docker_file_text.as_bytes();
+
+        let mut header = Header::new_gnu();
+        header.set_path("Dockerfile")
+            .unwrap();
+        header.set_size(docker_file.len() as u64);
+        header.set_cksum();
+
+        builder.append(&header, docker_file)
+            .unwrap();
+
+        let archive = Tar(builder.into_inner()
+            .unwrap());
+
+        let build_request = BuildImageRequest::default()
+            .tag("secured:local-latest");
+
+        // Expect an auth failure, because we didn't provide auth
+        {
+            let messages: Vec<BuildImageResponseStreamItem> = private
+                .images()
+                .build(build_request.clone(), archive.clone())
+                .await
+                .unwrap();
+
+            let errors: Vec<&String> = messages
+                .iter()
+                .flat_map(|e| &e.error)
+                .collect();
+
+            assert!(errors
+                .iter()
+                .any(|e| e.contains("no basic auth credentials"))
+            );
+        }
+
+        // Provide auth and expect success
+        {
+            let messages: Vec<BuildImageResponseStreamItem> = private_with_auth
+                .images()
+                .build(build_request, archive)
+                .await
+                .unwrap();
+
+            let errors: Vec<&str> = messages
+                .iter()
+                .flat_map(|e| &e.error)
+                .map(|e| e.as_str())
+                .collect();
+
+            assert_eq!(0, errors.len(), "{}", errors.join("\n"));
+        }
+    }
 
     public.container(registry.id).stop()
         .await

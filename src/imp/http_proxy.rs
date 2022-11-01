@@ -1,16 +1,19 @@
+use std::collections::HashMap;
 use std::string::FromUtf8Error;
+use hyper::http::header::CONTENT_TYPE;
 
 use hyper::{Request, StatusCode};
 use hyper::body::Bytes;
 use log::debug;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde_json::Deserializer;
 
 use crate::errors::{DecLibraryError, DecUseError};
 use crate::imp::content_type;
 use crate::imp::hyper_proxy::HyperHttpClient;
 use crate::imp::other::converge;
-use crate::model::RegistryAuth;
+use crate::model::{RegistryAuth, RegistryConfig};
 use crate::responses::ErrorResponse;
 
 /// A proxy class that provides a basic REST-based DSL for interacting
@@ -62,6 +65,24 @@ impl DockerEngineHttpClient {
             .map_err(DecLibraryError::HttpRequestBuilderError)
     }
 
+    fn build_post_with_auth_config(
+        uri: &str,
+        registry_config: &HashMap<String, RegistryConfig>,
+        content_type: &str,
+        body: Vec<u8>) -> Result<Request<hyper::Body>, DecLibraryError>
+    {
+        let mut builder = Request::post(uri.to_string())
+            .header(CONTENT_TYPE, content_type);
+
+        if let Some(value) = Self::x_registry_config(registry_config)? {
+            builder = builder.header("X-Registry-Config", value);
+        }
+
+        builder
+            .body(hyper::Body::from(body))
+            .map_err(DecLibraryError::HttpRequestBuilderError)
+    }
+
     fn build_request<U, F>(&self, uri: U, request_from_uri: F) -> Result<DockerEngineHttpRequest, DecLibraryError>
     where
         U: ToString,
@@ -96,6 +117,22 @@ impl DockerEngineHttpClient {
         self.build_request(uri, |u| Self::build_post_with_auth(u, registry_auth))
     }
 
+    pub fn post_with_auth_config<U: ToString>(
+        &self,
+        uri: U,
+        registry_auth: &Option<RegistryAuth>,
+        content_type: &str,
+        body: Vec<u8>
+    ) -> Result<DockerEngineHttpRequest, DecLibraryError>
+    {
+        let auth_config = registry_auth
+            .as_ref()
+            .map(|ra| ra.as_config())
+            .unwrap_or_default();
+
+        self.build_request(uri, |u| Self::build_post_with_auth_config(u, &auth_config, content_type, body))
+    }
+
     fn x_registry_auth(registry_auth: &Option<RegistryAuth>) -> Result<Option<String>, DecLibraryError> {
         match registry_auth {
             None => Ok(None),
@@ -105,6 +142,18 @@ impl DockerEngineHttpClient {
 
                 Ok(Some(base64::encode(json)))
             }
+        }
+    }
+
+    fn x_registry_config(registry_config: &HashMap<String, RegistryConfig>) -> Result<Option<String>, DecLibraryError> {
+        if registry_config.is_empty() {
+            Ok(None)
+        }
+        else {
+            let json = serde_json::to_string(registry_config)
+                .map_err(DecLibraryError::RegistryAuthJsonEncodingError)?;
+
+            Ok(Some(base64::encode(json)))
         }
     }
 }
@@ -228,31 +277,47 @@ impl DockerEngineHttpResponse {
             .map_err(DecUseError::from_not_utf8)
     }
 
+    pub(crate) fn parse_stream<A: DeserializeOwned>(self) -> Result<Vec<A>, DecUseError> {
+        let status = self.status;
+        let request_uri = self.request_uri.clone();
+        let body = self.assert_json_text()?;
+        let parser = Deserializer::from_str(&body).into_iter::<A>();
+
+        let mut result: Vec<A> = Vec::new();
+
+        for parse_result in parser {
+            let parsed = parse_result
+                .map_err(|e| Self::parsing_error(request_uri.clone(), status, body.clone(), e))?;
+
+            result.push(parsed)
+        }
+
+        Ok(result)
+    }
+
     pub(crate) fn parse<A: DeserializeOwned>(self) -> Result<A, DecUseError> {
         let status = self.status;
         let request_uri = self.request_uri.clone();
         let body = self.assert_json_text()?;
         let parse_result = serde_json::from_str(&body);
 
-        match parse_result {
-            Err(e) => {
-                debug!(
-                    "Failed to parse {} received from {}: {}\n{}",
-                    content_type::JSON,
-                    request_uri,
-                    e,
-                    body
-                );
+        parse_result
+            .map_err(|e| Self::parsing_error(request_uri, status, body, e))
+    }
 
-                Err(DecUseError::UnparseableJsonResponse {
-                    status,
-                    text: body,
-                    parse_error: e
-                })
-            }
-            Ok(parsed) => {
-                Ok(parsed)
-            }
+    fn parsing_error(request_uri: String, status: StatusCode, body: String, e: serde_json::Error) -> DecUseError {
+        debug!(
+            "Failed to parse {} received from {}: {}\n{}",
+            content_type::JSON,
+            request_uri,
+            e,
+            body
+        );
+
+        DecUseError::UnparseableJsonResponse {
+            status,
+            text: body,
+            parse_error: e
         }
     }
 
