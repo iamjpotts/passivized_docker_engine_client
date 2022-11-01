@@ -88,6 +88,16 @@ impl UrlQueryBuilder {
         self
     }
 
+    pub fn append_all<V: ToString>(self, name: &str, values: Vec<V>) -> Self {
+        let mut this = self;
+
+        for v in values {
+            this = this.append(name, v);
+        }
+
+        this
+    }
+
     pub fn option<V: ToString>(self, name: &str, value: Option<V>) -> Self {
         match value {
             None => self,
@@ -225,4 +235,27 @@ pub mod test_url_builder {
         }
     }
 
+    #[test]
+    pub fn appends_all_with_same_name() {
+        let actual = UrlBuilder::from_str("http://a")
+            .unwrap()
+            .query()
+            .append_all("b", vec!["c", "d"])
+            .to_string();
+
+        assert_eq!("http://a/?b=c&b=d", actual);
+    }
+
+    #[test]
+    pub fn appends_none_with_same_name() {
+        let empty: Vec<String> = Vec::new();
+
+        let actual = UrlBuilder::from_str("http://a")
+            .unwrap()
+            .query()
+            .append_all("b", empty)
+            .to_string();
+
+        assert_eq!("http://a/", actual);
+    }
 }

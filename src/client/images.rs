@@ -4,14 +4,44 @@ use hyper::StatusCode;
 
 use crate::DockerEngineClient;
 use crate::errors::DecUseError;
-use crate::requests::CreateImageRequest;
-use crate::responses::ListedImage;
+use crate::imp::content_type;
+use crate::model::Tar;
+use crate::requests::{BuildImageRequest, CreateImageRequest};
+use crate::responses::{BuildImageResponseStreamItem, ListedImage};
 
 pub struct DecImages<'a> {
     pub(super) client: &'a DockerEngineClient
 }
 
 impl <'a> DecImages<'a> {
+
+    /// Build a new image.
+    ///
+    /// Context is a tar file that includes a Dockerfile and any files referenced by it.
+    ///
+    /// See https://docs.docker.com/engine/api/v1.41/#tag/Image/operation/ImageBuild
+    ///
+    /// Failure can be returned two ways:
+    ///     1. Via Result::Err
+    ///     2. Via Result::Ok with stream items containing error messages
+    pub async fn build(&self, request: BuildImageRequest, context: Tar) -> Result<Vec<BuildImageResponseStreamItem>, DecUseError> {
+        let uri = self.client.url.images().build(request)?;
+        let response = self.client.http
+            .post_with_auth_config(
+                uri,
+                &self.client.registry_auth,
+                content_type::TAR,
+                context.0
+            )?
+            .execute()
+            .await?;
+
+        let items = response
+            .assert_item_status(StatusCode::OK)?
+            .parse_stream()?;
+
+        Ok(items)
+    }
 
     /// "Create an image by either pulling it from a registry or importing it."
     ///

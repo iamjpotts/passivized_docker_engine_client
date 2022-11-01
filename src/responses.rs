@@ -1,4 +1,5 @@
 
+mod build_image;
 mod container_network_settings;
 mod create_container;
 mod create_exec;
@@ -18,6 +19,7 @@ mod top_response;
 mod version_response;
 mod wait;
 
+pub use build_image::*;
 pub use container_network_settings::*;
 pub use create_container::*;
 pub use create_exec::*;

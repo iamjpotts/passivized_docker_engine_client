@@ -1,3 +1,4 @@
+mod build_image;
 mod create_container;
 mod create_exec;
 mod create_image;
@@ -10,6 +11,7 @@ mod list_containers;
 mod remove_container;
 mod wait;
 
+pub use build_image::*;
 pub use create_container::*;
 pub use create_exec::*;
 pub use create_image::*;

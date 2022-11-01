@@ -3,12 +3,15 @@ mod test_utils;
 
 use std::str::FromStr;
 
-use http::Uri;
+use http::{StatusCode, Uri};
+use tar::{Header, Builder};
 use test_utils::images::web;
 use test_utils::{content_type, random_name};
 use passivized_docker_engine_client::client::DOCKER_ENGINE_VERSION;
 use passivized_docker_engine_client::DockerEngineClient;
 use passivized_docker_engine_client::errors::DecUseError;
+use passivized_docker_engine_client::model::Tar;
+use passivized_docker_engine_client::requests::BuildImageRequest;
 
 const MISSING_IMAGE: &str = "does_not_exist";
 const MISSING_TAG: &str = "does_not_exist";
@@ -75,6 +78,197 @@ async fn test_bad_image_list_responses() {
                 panic!("Did not expect {}", error)
             }
         }
+    }
+}
+
+#[cfg(not(windows))]  // Due to use of WaitCondition::NotRunning
+#[tokio::test]
+async fn test_build_and_run() {
+    use passivized_docker_engine_client::requests::WaitCondition;
+    use passivized_docker_engine_client::requests::CreateContainerRequest;
+
+    const FN: &str = "test_build_and_run";
+
+    let dec = DockerEngineClient::new()
+        .unwrap();
+
+    dec.images().pull_if_not_present("busybox", "latest")
+        .await
+        .unwrap();
+
+    let mut builder = Builder::new(Vec::new());
+
+    {
+        let docker_file_text = "FROM busybox\n\nCMD [\"echo\", \"musk\", \"bought\", \"twitter\"]";
+        let docker_file = docker_file_text.as_bytes();
+
+        let mut header = Header::new_gnu();
+        header.set_path("Dockerfile")
+            .unwrap();
+        header.set_size(docker_file.len() as u64);
+        header.set_cksum();
+
+        builder.append(&header, docker_file)
+            .unwrap();
+    }
+
+    let archive = Tar(builder.into_inner()
+        .unwrap());
+
+    let tag = "test_images:latest";
+
+    let request = BuildImageRequest::default()
+        .tag(tag);
+
+    dec.images().build(request, archive)
+        .await
+        .unwrap();
+
+    let container_name = random_name(FN);
+
+    let create_request = CreateContainerRequest::default()
+        .image(tag)
+        .name(container_name);
+
+    let container = dec.containers().create(create_request)
+        .await
+        .unwrap();
+
+    dec.container(&container.id).start()
+        .await
+        .unwrap();
+
+    dec.container(&container.id).wait(WaitCondition::NotRunning)
+        .await
+        .unwrap();
+
+    let logs = dec.container(&container.id).logs()
+        .await
+        .unwrap();
+
+    for line in &logs {
+        println!("{}", line.text);
+    }
+
+    dec.container(&container.id).remove()
+        .await
+        .unwrap();
+
+    dec.images().untag(tag)
+        .await
+        .unwrap();
+
+    assert!(logs.iter().any(|line| line.text == "musk bought twitter\n"));
+}
+
+#[tokio::test]
+async fn test_build_fails_invalid_from() {
+    let dec = DockerEngineClient::new()
+        .unwrap();
+
+    let mut builder = Builder::new(Vec::new());
+
+    {
+        let docker_file_text = "FROM doesnotexist.locallan/doesnotexist\n\nRUN echo Hi\n";
+        let docker_file = docker_file_text.as_bytes();
+
+        let mut header = Header::new_gnu();
+        header.set_path("Dockerfile")
+            .unwrap();
+        header.set_size(docker_file.len() as u64);
+        header.set_cksum();
+
+        builder.append(&header, docker_file)
+            .unwrap();
+    }
+
+    let archive = Tar(builder.into_inner()
+        .unwrap());
+
+    let request = BuildImageRequest::default()
+        .tag("test_images_fail_from:latest");
+
+    let actual = dec.images().build(request, archive)
+        .await
+        .unwrap();
+
+    let error = actual
+        .iter()
+        .find(|item| item.error.is_some())
+        .unwrap();
+
+    #[cfg(not(target_os = "macos"))]
+    const EXPECTED: &str = "dial tcp: lookup doesnotexist.locallan: no such host";
+
+    #[cfg(target_os = "macos")]
+    const EXPECTED: &str = "Failed to lookup host: doesnotexist.locallan";
+
+    assert!(
+        error.error
+            .as_ref()
+            .unwrap()
+            .contains(EXPECTED),
+        "Expected: {}\n  Actual: {:?}",
+        EXPECTED,
+        error.error
+    );
+
+    assert!(
+        error.error_detail
+            .as_ref()
+            .unwrap()
+            .message
+            .contains(EXPECTED),
+        "Expected: {}\n  Actual: {:?}",
+        EXPECTED,
+        error.error
+    );
+}
+
+#[tokio::test]
+async fn test_build_fails_invalid_syntax() {
+    let dec = DockerEngineClient::new()
+        .unwrap();
+
+    dec.images().pull_if_not_present("busybox", "latest")
+        .await
+        .unwrap();
+
+    let mut builder = Builder::new(Vec::new());
+
+    {
+        // Invalid syntax for a Dockerfile
+        let docker_file_text = "&%23%$!";
+        let docker_file = docker_file_text.as_bytes();
+
+        let mut header = Header::new_gnu();
+        header.set_path("Dockerfile")
+            .unwrap();
+        header.set_size(docker_file.len() as u64);
+        header.set_cksum();
+
+        builder.append(&header, docker_file)
+            .unwrap();
+    }
+
+    let archive = Tar(builder.into_inner()
+        .unwrap());
+
+    let request = BuildImageRequest {
+        tags: vec!["test_images_fail:latest".into()],
+        ..BuildImageRequest::default()
+    };
+
+    let actual = dec.images().build(request, archive)
+        .await
+        .unwrap_err();
+
+    if let DecUseError::Rejected { status, message } = actual {
+        assert_eq!(StatusCode::BAD_REQUEST, status);
+        assert!(message.contains("dockerfile parse error"), "Message contains 'dockerfile parse error': {}", message);
+    }
+    else {
+        panic!("Unexpected error: {}", actual);
     }
 }
 
