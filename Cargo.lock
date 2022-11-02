@@ -685,7 +685,7 @@ dependencies = [
 
 [[package]]
 name = "passivized_docker_engine_client"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "backoff",
  "base64",
