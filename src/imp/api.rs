@@ -9,7 +9,7 @@ use crate::client::DOCKER_ENGINE_VERSION;
 use crate::errors::DecCreateError;
 use crate::imp::url::UrlBuilder;
 use crate::imp::url_parser::is_http;
-use crate::requests::{BuildImageRequest, CreateImageRequest, ListContainersRequest, RemoveContainerArgs, WaitCondition};
+use crate::requests::{BuildImageRequest, CreateImageRequest, ListContainersRequest, LogsArgs, RemoveContainerArgs, WaitCondition};
 
 pub(crate) const DOCKER_ENGINE_VERSION_PATH: &str = concat!("/", DOCKER_ENGINE_VERSION);
 
@@ -308,8 +308,17 @@ impl DockerEngineApiPathContainers {
         Ok(builder.to_string())
     }
 
-    pub fn logs<ID: Into<String>>(&self, name_or_id: ID) -> String {
-        self.base.at(format!("/containers/{}/logs?stdout=true&stderr=true", name_or_id.into()))
+    pub fn logs<ID: Into<String>>(&self, name_or_id: ID, args: LogsArgs) -> Result<String, url::ParseError> {
+        Ok(self.base.builder()?
+           .join("containers")?
+           .join(&name_or_id.into())?
+           .join("logs")?
+           .query()
+           .append("stdout", args.stdout)
+           .append("stderr", args.stderr)
+           .append("timestamps", args.timestamps)
+           .to_string()
+        )
     }
 
     #[cfg(not(windows))]  // Docker for Windows does not support pausing containers.
@@ -701,7 +710,7 @@ mod test_docker_engine_api_path {
     }
 
     mod containers {
-        use crate::requests::{ListContainersRequest, RemoveContainerArgs, WaitCondition};
+        use crate::requests::{ListContainersRequest, LogsArgs, RemoveContainerArgs, WaitCondition};
         use super::super::DockerEngineApi;
 
         #[test]
@@ -810,10 +819,13 @@ mod test_docker_engine_api_path {
 
         #[test]
         pub fn logs() {
-            let api = DockerEngineApi::without_server();
-            let actual = api.containers().logs("chatty");
+            let api = DockerEngineApi::with_server("http://a".into())
+                .unwrap()
+                .without_version();
+            let actual = api.containers().logs("chatty", LogsArgs::default())
+                .unwrap();
 
-            assert_eq!("/containers/chatty/logs?stdout=true&stderr=true", &actual);
+            assert_eq!("http://a/containers/chatty/logs?stdout=true&stderr=true&timestamps=false", &actual);
         }
 
         #[test]
