@@ -5,12 +5,13 @@ use std::str::FromStr;
 
 use http::{StatusCode, Uri};
 use tar::{Header, Builder};
+use time::OffsetDateTime;
 use test_utils::images::web;
 use test_utils::{content_type, random_name};
 use passivized_docker_engine_client::client::DOCKER_ENGINE_VERSION;
 use passivized_docker_engine_client::DockerEngineClient;
 use passivized_docker_engine_client::errors::DecUseError;
-use passivized_docker_engine_client::model::Tar;
+use passivized_docker_engine_client::model::{Tar, TsStreamLine};
 use passivized_docker_engine_client::requests::BuildImageRequest;
 
 const MISSING_IMAGE: &str = "does_not_exist";
@@ -89,6 +90,8 @@ async fn test_build_and_run() {
 
     const FN: &str = "test_build_and_run";
 
+    let started_at = OffsetDateTime::now_utc();
+
     let dec = DockerEngineClient::new()
         .unwrap();
 
@@ -150,6 +153,13 @@ async fn test_build_and_run() {
         println!("{}", line.text);
     }
 
+    let ts_logs: Vec<TsStreamLine> = dec.container(&container.id).logs_timestamped()
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|r| r.unwrap())
+        .collect();
+
     dec.container(&container.id).remove()
         .await
         .unwrap();
@@ -158,7 +168,17 @@ async fn test_build_and_run() {
         .await
         .unwrap();
 
+    let ended_at = OffsetDateTime::now_utc();
+
     assert!(logs.iter().any(|line| line.text == "musk bought twitter\n"));
+
+    let found = ts_logs
+        .iter()
+        .find(|line| line.text == "musk bought twitter\n")
+        .unwrap();
+
+    assert!(started_at < found.timestamp);
+    assert!(found.timestamp < ended_at);
 }
 
 #[tokio::test]

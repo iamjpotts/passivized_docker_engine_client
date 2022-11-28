@@ -4,9 +4,9 @@ use crate::client::container_files::DecContainerFiles;
 use crate::client::shared::parse_container_log;
 use crate::DockerEngineClient;
 use crate::errors::DecUseError;
-use crate::requests::{CreateExecRequest, InspectContainerArgs, RemoveContainerArgs, WaitCondition};
+use crate::requests::{CreateExecRequest, InspectContainerArgs, LogsArgs, RemoveContainerArgs, WaitCondition};
 use crate::responses::{CreateExecResponse, InspectContainerResponse, TopResponse, WaitResponse};
-use crate::model::StreamLine;
+use crate::model::{StreamLine, TsStreamLine};
 
 pub struct DecContainer<'a> {
     pub(super) client: &'a DockerEngineClient,
@@ -54,7 +54,22 @@ impl <'a> DecContainer<'a> {
     /// }
     /// ```
     pub async fn logs(&self) -> Result<Vec<StreamLine>, DecUseError> {
-        let uri = self.client.url.containers().logs(&self.container_id);
+        self.logs_with(LogsArgs::default()).await
+    }
+
+    pub async fn logs_timestamped(&self) -> Result<Vec<Result<TsStreamLine, String>>, DecUseError> {
+        let lines = self.logs_with(LogsArgs::default().timestamps()).await?;
+
+        let results = lines
+            .iter()
+            .map(TsStreamLine::try_from)
+            .collect();
+
+        Ok(results)
+    }
+
+    async fn logs_with(&self, args: LogsArgs) -> Result<Vec<StreamLine>, DecUseError> {
+        let uri = self.client.url.containers().logs(&self.container_id, args)?;
         let response = self.client.http.get(uri)?.execute().await?;
 
         response

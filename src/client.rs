@@ -21,4 +21,4 @@ pub use volume::DecVolume;
 pub use volumes::DecVolumes;
 
 // Internal only
-mod shared;
+pub(crate) mod shared;

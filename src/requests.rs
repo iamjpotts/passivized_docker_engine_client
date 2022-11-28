@@ -8,6 +8,7 @@ mod exec;
 mod inspect_container;
 mod inspect_network;
 mod list_containers;
+mod logs;
 mod remove_container;
 mod wait;
 
@@ -21,5 +22,6 @@ pub use exec::*;
 pub use inspect_container::*;
 pub use inspect_network::*;
 pub use list_containers::*;
+pub(crate) use logs::*;
 pub use remove_container::*;
 pub use wait::*;

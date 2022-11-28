@@ -3,6 +3,8 @@ use std::fmt::{Display, Formatter};
 use std::io::ErrorKind::UnexpectedEof;
 use std::io::{Read};
 use std::string::FromUtf8Error;
+use time::OffsetDateTime;
+use crate::client::shared::split_log_container_timestamp;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StreamLine {
@@ -136,7 +138,7 @@ impl From<FromUtf8Error> for StreamLineReadError {
 //     0: stdin (is written on stdout)
 //     1: stdout
 //     2: stderr
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StreamKind {
     StdIn,
     StdOut,
@@ -170,6 +172,27 @@ impl From<u8> for StreamKind {
     }
 }
 
+/// Timestamped stream line
+pub struct TsStreamLine {
+    pub timestamp: OffsetDateTime,
+    pub kind: StreamKind,
+    pub text: String,
+}
+
+impl TryFrom<&StreamLine> for TsStreamLine {
+    type Error = String;
+
+    fn try_from(value: &StreamLine) -> Result<TsStreamLine, Self::Error> {
+        let parts = split_log_container_timestamp(&value.text)?;
+
+        Ok(Self {
+            timestamp: parts.timestamp,
+            kind: value.kind,
+            text: parts.text.to_string()
+        })
+    }
+
+}
 
 #[cfg(test)]
 mod test_stream_kind {
