@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use std::collections::HashMap;
+use crate::imp::serde::dz_hashmap;
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -8,7 +9,7 @@ pub struct GraphDriver {
     #[serde(rename = "Name")]
     pub name: String,
 
-    #[serde(rename = "Data")]
+    #[serde(rename = "Data", deserialize_with = "dz_hashmap")]
     pub data: HashMap<String, String>
 }
 

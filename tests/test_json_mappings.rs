@@ -82,6 +82,17 @@ pub mod container {
             }
 
             #[test]
+            pub fn parses_on_fedora_host() {
+                let text = super::super::super::fixtures::json("fedora-inspect-running-container-response.json");
+
+                let response: InspectContainerResponse = serde_json::from_str(&text)
+                    .unwrap();
+
+                // Null on Fedora hosts. Deserialize as an empty map.
+                assert_eq!(0, response.graph_driver.data.len());
+            }
+
+            #[test]
             pub fn parses_config() {
                 let text = super::super::super::fixtures::json("container-create-response.json");
 
