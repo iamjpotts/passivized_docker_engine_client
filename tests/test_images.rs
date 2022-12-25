@@ -5,7 +5,6 @@ use std::str::FromStr;
 
 use http::{StatusCode, Uri};
 use tar::{Header, Builder};
-use time::OffsetDateTime;
 use test_utils::images::web;
 use test_utils::{content_type, random_name};
 use passivized_docker_engine_client::client::DOCKER_ENGINE_VERSION;
@@ -85,6 +84,7 @@ async fn test_bad_image_list_responses() {
 #[cfg(not(windows))]  // Due to use of WaitCondition::NotRunning
 #[tokio::test]
 async fn test_build_and_run() {
+    use time::OffsetDateTime;
     use passivized_docker_engine_client::requests::WaitCondition;
     use passivized_docker_engine_client::requests::CreateContainerRequest;
 
