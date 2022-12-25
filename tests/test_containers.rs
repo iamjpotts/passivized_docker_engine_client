@@ -392,7 +392,7 @@ async fn test_inspect_non_started_container_fields() {
     assert_eq!("", inspected.log_path);
     assert_eq!(format!("/{}", name), inspected.name);
     assert_eq!(0, inspected.restart_count);
-    assert_eq!(web::EXPECTED_DRIVER, inspected.driver);
+    assert!(web::expected_driver().contains(&inspected.driver), "Should contain one of {:?} but was {}", web::expected_driver(), inspected.driver);
     assert_eq!(EXPECTED_PLATFORM, inspected.platform);
     assert_eq!("", inspected.mount_label);
     assert_eq!("", inspected.process_label);
@@ -402,15 +402,21 @@ async fn test_inspect_non_started_container_fields() {
     assert_eq!(request_host_config.network_mode.unwrap(), inspected.host_config.network_mode);
     assert_eq!(request_host_config.privileged, inspected.host_config.privileged);
 
-    assert_eq!(web::EXPECTED_DRIVER, inspected.graph_driver.name);
+    assert!(web::expected_driver().contains(&inspected.graph_driver.name));
 
-    #[cfg(windows)]
-    const EXPECTED_DATA_KEY: &str = "dir";
+    if inspected.graph_driver.name == "btrfs" {
+        // Fedora uses btrfs with no parameters
+        assert_eq!(0, inspected.graph_driver.data.len());
+    }
+    else {
+        #[cfg(windows)]
+        const EXPECTED_DATA_KEY: &str = "dir";
 
-    #[cfg(not(windows))]
-    const EXPECTED_DATA_KEY: &str = "LowerDir";
+        #[cfg(not(windows))]
+        const EXPECTED_DATA_KEY: &str = "LowerDir";
 
-    assert!(inspected.graph_driver.data.contains_key(EXPECTED_DATA_KEY));
+        assert!(inspected.graph_driver.data.contains_key(EXPECTED_DATA_KEY));
+    }
 
     // Windows does not report the size
     #[cfg(windows)]

@@ -18,6 +18,8 @@ pub mod hello {
 }
 
 pub mod web {
+    use std::collections::HashSet;
+
     pub const IMAGE: &str = "caddy";
     pub const TAG: &str = "2.6.1";
 
@@ -42,11 +44,22 @@ pub mod web {
     pub const LABEL_KEY: &str = "org.opencontainers.image.title";
     pub const LABEL_VALUE: &str = "Caddy";
 
-    #[cfg(windows)]
-    pub const EXPECTED_DRIVER: &str = "windowsfilter";
+    pub fn expected_driver() -> HashSet<String> {
+        #[cfg(windows)]
+        {
+            HashSet::from(["windowsfilter".into()])
+        }
 
-    #[cfg(not(windows))]
-    pub const EXPECTED_DRIVER: &str = "overlay2";
+        #[cfg(not(windows))]
+        {
+            HashSet::from([
+                // Ubuntu
+                "overlay2".into(),
+                // Fedora
+                "btrfs".into()])
+        }
+    }
+
 
     #[cfg(windows)]
     pub const EXPECTED_PROCESS: &str = "caddy.exe";
