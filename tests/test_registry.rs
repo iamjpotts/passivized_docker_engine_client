@@ -1,8 +1,4 @@
-
-#[cfg(not(target_os = "macos"))]  // On Macs, containers run in a VM, and their network is inaccessible.
-#[cfg(not(windows))]  // No registry image available for Windows
-#[path = "../examples/example_utils/lib.rs"]
-mod example_utils;
+#![allow(unstable_name_collisions)]  // itertools::intersperse
 
 #[cfg(not(target_os = "macos"))]  // On Macs, containers run in a VM, and their network is inaccessible.
 #[cfg(not(windows))]  // No registry image available for Windows
@@ -31,6 +27,7 @@ async fn test_push_to_authenticated_registry() {
 
     use http::StatusCode;
     use hyper_tls::native_tls::{Certificate, Identity, TlsConnector};
+    use itertools::Itertools;
     use log::info;
     use openssl::pkey::{PKey, Private};
     use tar::{Archive, Builder, Header};
@@ -50,7 +47,7 @@ async fn test_push_to_authenticated_registry() {
     use passivized_htpasswd::Htpasswd;
     use passivized_test_support::http_status_tests::{equals, is_success};
     use passivized_test_support::logging;
-    use passivized_test_support::waiter::wait_for_https_server;
+    use passivized_test_support::waiter::{wait_for_https_server_with_backoff, wait_for_tcp_server_with_backoff};
 
     const HTPASSWD_USERNAME: &str = "foo";
     const HTPASSWD_PASSWORD: &str = "bar";
@@ -105,6 +102,29 @@ async fn test_push_to_authenticated_registry() {
     let inspected_network = public.network(NETWORK_NAME).inspect()
         .await
         .unwrap();
+
+    let network_containers: Vec<String> = inspected_network
+        .containers
+        .iter()
+        .map(|(id, c)| c.
+            name
+            .as_ref()
+            .map(|n| n.to_string())
+            .unwrap_or(id.to_string())
+        )
+        .sorted()
+        .collect();
+
+    assert!(
+        network_containers.is_empty(),
+        "Network {} has running containers: {}",
+        NETWORK_NAME,
+        network_containers
+            .into_iter()
+            .sorted()
+            .intersperse(", ".into())
+            .collect::<String>()
+    );
 
     let subnet = inspected_network
         .ipam
@@ -215,7 +235,12 @@ async fn test_push_to_authenticated_registry() {
         .build()
         .unwrap();
 
-    wait_for_https_server(registry_url, registry_tls, is_success())
+    wait_for_https_server_with_backoff(
+        registry_url,
+        registry_tls,
+        is_success(),
+        imp::build_backoff_for_registry()
+    )
         .await
         .unwrap();
 
@@ -254,7 +279,7 @@ async fn test_push_to_authenticated_registry() {
 
     info!("dind url: {dind_url}");
 
-    example_utils::retry::wait_for_tcp_server(&dind_ip, dind::PORT)
+    wait_for_tcp_server_with_backoff(&dind_ip, dind::PORT, imp::build_backoff_for_dind())
         .await
         .unwrap();
 
@@ -315,7 +340,12 @@ async fn test_push_to_authenticated_registry() {
         .build()
         .unwrap();
 
-    wait_for_https_server(dind_url, tls.clone(), equals(StatusCode::NOT_FOUND)).await.unwrap();
+    wait_for_https_server_with_backoff(
+        dind_url,
+        tls.clone(),
+        equals(StatusCode::NOT_FOUND),
+        imp::build_backoff_for_dind()
+    ).await.unwrap();
 
     let private_url = format!("https://{}:{}", dind_ip, dind::PORT);
     let private = DockerEngineClient::with_tls_config(&private_url, tls.clone())
@@ -370,7 +400,7 @@ async fn test_push_to_authenticated_registry() {
     // Pull a public image so we can tag it and push it to the authenticated private registry.
     // Authentication is not needed so we won't use it.
 
-    private.images().pull(web::IMAGE, web::TAG)
+    private.images().pull_if_not_present(web::IMAGE, web::TAG)
         .await
         .unwrap();
 
@@ -488,7 +518,57 @@ async fn test_push_to_authenticated_registry() {
         .await
         .unwrap();
 
-    public.network(NETWORK_NAME).remove()
+    imp::remove_network(&public, NETWORK_NAME)
         .await
         .unwrap();
+}
+
+#[cfg(not(target_os = "macos"))]  // On Macs, containers run in a VM, and their network is inaccessible.
+#[cfg(not(windows))]  // No registry image available for Windows
+mod imp {
+    use backoff::backoff::Constant;
+    use backoff::future::retry_notify;
+    use log::warn;
+    use passivized_test_support::retry::Limit;
+    use passivized_docker_engine_client::DockerEngineClient;
+    use passivized_docker_engine_client::errors::DecUseError;
+
+    pub(super) fn build_backoff_for_dind() -> Limit {
+        use std::time::Duration;
+
+        let interval = Duration::from_secs(2);
+
+        Limit::new(10, Constant::new(interval))
+    }
+
+    pub(super) fn build_backoff_for_registry() -> Limit {
+        use std::time::Duration;
+
+        let interval = Duration::from_secs(2);
+
+        Limit::new(10, Constant::new(interval))
+    }
+
+    pub(super) fn build_backoff_for_network_removal() -> Limit {
+        use std::time::Duration;
+
+        let interval = Duration::from_secs(1);
+
+        Limit::new(5, Constant::new(interval))
+    }
+
+    pub(super) async fn remove_network(docker: &DockerEngineClient, id: &str) -> Result<(), DecUseError> {
+        retry_notify(
+            build_backoff_for_network_removal(),
+            || async {
+                (match docker.network(id).remove().await {
+                    Ok(()) => Ok(()),
+                    Err(DecUseError::NotFound { .. }) => Ok(()),
+                    Err(e) => Err(e)
+                })
+                    .map_err(backoff::Error::transient)
+            },
+            |error, _| warn!("Retrying after failure: {:?}", error)
+        ).await
+    }
 }
