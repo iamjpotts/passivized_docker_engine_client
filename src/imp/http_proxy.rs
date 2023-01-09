@@ -12,7 +12,7 @@ use serde_json::Deserializer;
 use crate::errors::{DecLibraryError, DecUseError};
 use crate::imp::content_type;
 use crate::imp::hyper_proxy::HyperHttpClient;
-use crate::imp::other::converge;
+use crate::imp::other::{base64_encode, converge};
 use crate::model::{RegistryAuth, RegistryConfig};
 use crate::responses::ErrorResponse;
 
@@ -140,7 +140,7 @@ impl DockerEngineHttpClient {
                 let json = serde_json::to_string(&auth)
                     .map_err(DecLibraryError::RegistryAuthJsonEncodingError)?;
 
-                Ok(Some(base64::encode(json)))
+                Ok(Some(base64_encode(json)))
             }
         }
     }
@@ -153,7 +153,7 @@ impl DockerEngineHttpClient {
             let json = serde_json::to_string(registry_config)
                 .map_err(DecLibraryError::RegistryAuthJsonEncodingError)?;
 
-            Ok(Some(base64::encode(json)))
+            Ok(Some(base64_encode(json)))
         }
     }
 }

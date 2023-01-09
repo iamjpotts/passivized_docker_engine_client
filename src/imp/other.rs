@@ -1,4 +1,13 @@
 
+
+/// Convenience wrapper over base64 crate's breaking changes
+pub(crate) fn base64_encode<T: AsRef<[u8]>>(input: T) -> String {
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine;
+
+    STANDARD.encode(input)
+}
+
 /// Some functions convert/extract input parameters that represent failure information.
 /// That information is converted to an error result type.
 ///
@@ -10,6 +19,20 @@ pub(crate) fn converge<A>(result: Result<A, A>) -> A {
     match result {
         Err(a) => a,
         Ok(a) => a
+    }
+}
+
+#[cfg(test)]
+mod test_base64_encode {
+    use super::base64_encode;
+
+    //noinspection SpellCheckingInspection
+    #[test]
+    fn encodes() {
+        let input: [u8; 4] = [2, 3, 4, 5];
+
+        let expected = "AgMEBQ==";
+        assert_eq!(expected, base64_encode(input));
     }
 }
 
