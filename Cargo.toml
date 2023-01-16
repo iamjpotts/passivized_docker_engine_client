@@ -13,7 +13,7 @@ name = "passivized_docker_engine_client"
 readme = "README.md"
 repository = "https://github.com/iamjpotts/passivized_docker_engine_client"
 rust-version = "1.64"
-version = "0.0.7"
+version = "0.0.8-alpha"
 
 [dependencies]
 base64 = "0.21"
