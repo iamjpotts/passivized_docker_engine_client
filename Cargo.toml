@@ -41,7 +41,7 @@ mockito = "0.31.0"
 native-tls = "0.2"
 openssl = "0.10"
 passivized_htpasswd = "0.0.3"
-passivized_test_support = "0.0.7"
+passivized_test_support = "0.0.8"
 rand = "0.8"
 serial_test = "1.0"
 simple_logger = { version = "4.0", default-features = false, features = ["timestamps", "threads"] }
