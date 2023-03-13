@@ -49,7 +49,7 @@ mod tests {
     mod start {
         use const_str::concat;
         use http::StatusCode;
-        use serial_test::serial;
+        use mockito::ServerGuard;
 
         use crate::DockerEngineClient;
         use crate::errors::DecUseError;
@@ -57,22 +57,21 @@ mod tests {
         use crate::imp::content_type;
         use crate::requests::ExecStartRequest;
 
-        fn mockito_client() -> DockerEngineClient {
-            DockerEngineClient::with_server(format!("http://{}", mockito::server_address()))
+        fn mockito_client(server: &ServerGuard) -> DockerEngineClient {
+            DockerEngineClient::with_server(server.url())
                 .unwrap()
         }
 
         #[tokio::test]
-        #[serial]
         async fn response_has_wrong_content_type() {
-            let dec = mockito_client();
+            let mut server = mockito::Server::new_async().await;
+            let dec = mockito_client(&server);
 
-            mockito::reset();
-
-            let _m = mockito::mock("POST", concat!(DOCKER_ENGINE_VERSION_PATH, "/exec/some_exec_id/start"))
+            server.mock("POST", concat!(DOCKER_ENGINE_VERSION_PATH, "/exec/some_exec_id/start"))
                 .with_status(200)
                 .with_header("Content-Type", content_type::JSON)
-                .create();
+                .create_async()
+                .await;
 
             let exec_start_request = ExecStartRequest {
                 detach: false,
@@ -93,16 +92,15 @@ mod tests {
         }
 
         #[tokio::test]
-        #[serial]
         async fn response_has_wrong_status() {
-            let dec = mockito_client();
+            let mut server = mockito::Server::new_async().await;
+            let dec = mockito_client(&server);
 
-            mockito::reset();
-
-            let _m = mockito::mock("POST", "/exec/some_exec_id/start")
+            server.mock("POST", "/exec/some_exec_id/start")
                 .with_status(StatusCode::NOT_IMPLEMENTED.as_u16() as usize)
                 .with_header("Content-Type", content_type::JSON)
-                .create();
+                .create_async()
+                .await;
 
             let exec_start_request = ExecStartRequest {
                 detach: false,
