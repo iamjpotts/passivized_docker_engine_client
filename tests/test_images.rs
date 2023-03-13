@@ -4,6 +4,7 @@ mod test_utils;
 use std::str::FromStr;
 
 use http::{StatusCode, Uri};
+use mockito::{Server, ServerGuard};
 use tar::{Header, Builder};
 use test_utils::images::web;
 use test_utils::{content_type, random_name};
@@ -16,16 +17,16 @@ use passivized_docker_engine_client::requests::BuildImageRequest;
 const MISSING_IMAGE: &str = "does_not_exist";
 const MISSING_TAG: &str = "does_not_exist";
 
-fn mockito_client() -> DockerEngineClient {
-    DockerEngineClient::with_server(format!("http://{}", mockito::server_address()))
+fn mockito_client(server: &ServerGuard) -> DockerEngineClient {
+    DockerEngineClient::with_server(server.url())
         .unwrap()
 }
 
 #[tokio::test]
 async fn test_bad_image_list_responses() {
-    mockito::reset();
+    let mut server = Server::new_async().await;
 
-    let dec = mockito_client();
+    let dec = mockito_client(&server);
 
     let path = format!("/{}/images/json", DOCKER_ENGINE_VERSION);
 
@@ -40,9 +41,12 @@ async fn test_bad_image_list_responses() {
         }
     }
 
-    mockito::reset();
+    server.reset();
 
-    let _m = mockito::mock("GET", path.as_str()).with_status(404).create();
+    server.mock("GET", path.as_str())
+        .with_status(404)
+        .create_async()
+        .await;
 
     {
         let error = dec.images().list().await.unwrap_err();
@@ -57,13 +61,14 @@ async fn test_bad_image_list_responses() {
         }
     }
 
-    mockito::reset();
+    server.reset();
 
-    let _m = mockito::mock("GET", path.as_str())
+    server.mock("GET", path.as_str())
         .with_status(200)
         .with_header("Content-Type", content_type::JSON)
         .with_body("not json")
-        .create();
+        .create_async()
+        .await;
 
     {
         let error = dec.images().list().await.unwrap_err();

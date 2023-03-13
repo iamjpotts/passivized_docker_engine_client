@@ -107,25 +107,22 @@ impl HyperHttpClientConfig {
 mod test_hyper_http_client {
     use http::StatusCode;
     use hyper::{Body, Request};
-    use serial_test::serial;
 
     use crate::imp::hyper_proxy::HyperHttpClient;
 
     #[tokio::test]
-    #[serial]
     async fn gets_from_http_server() {
-        let url = format!("http://{}", mockito::server_address());
+        let mut server = mockito::Server::new_async().await;
         let path = "/some/file";
 
-        mockito::reset();
-
-        let _m = mockito::mock("GET", path)
+        server.mock("GET", path)
             .with_status(200)
-            .create();
+            .create_async()
+            .await;
 
         let client = HyperHttpClient::http();
 
-        let request = Request::get(format!("{}{}", url, path))
+        let request = Request::get(format!("{}{}", server.url(), path))
             .body(Body::empty())
             .unwrap();
 
