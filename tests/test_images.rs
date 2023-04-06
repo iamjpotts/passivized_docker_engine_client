@@ -218,30 +218,27 @@ async fn test_build_fails_invalid_from() {
         .unwrap();
 
     #[cfg(not(target_os = "macos"))]
-    const EXPECTED: &str = "dial tcp: lookup doesnotexist.locallan: no such host";
+    const EXPECTED_FIRST: &str = "dial tcp: lookup doesnotexist.locallan";
+    #[cfg(not(target_os = "macos"))]
+    const EXPECTED_SECOND: &str = "no such host";
 
     #[cfg(target_os = "macos")]
-    const EXPECTED: &str = "Failed to lookup host: doesnotexist.locallan";
+    const EXPECTED_FIRST: &str = "Failed to lookup host";
+    #[cfg(target_os = "macos")]
+    const EXPECTED_SECOND: &str = "doesnotexist.locallan";
 
-    assert!(
-        error.error
-            .as_ref()
-            .unwrap()
-            .contains(EXPECTED),
-        "Expected: {}\n  Actual: {:?}",
-        EXPECTED,
-        error.error
-    );
+    assert_contains_both("error.error", EXPECTED_FIRST, EXPECTED_SECOND, error.error.as_ref().unwrap());
+    assert_contains_both("error_detail", EXPECTED_FIRST, EXPECTED_SECOND, &error.error_detail.as_ref().unwrap().message);
+}
 
+fn assert_contains_both(what: &str, expected_first: &str, expected_second: &str, actual: &str) {
     assert!(
-        error.error_detail
-            .as_ref()
-            .unwrap()
-            .message
-            .contains(EXPECTED),
-        "Expected: {}\n  Actual: {:?}",
-        EXPECTED,
-        error.error
+        actual.contains(expected_first) && actual.contains(expected_second),
+        "Expected in {}: {} and {}\n  Actual: {:?}",
+        what,
+        expected_first,
+        expected_second,
+        actual
     );
 }
 
