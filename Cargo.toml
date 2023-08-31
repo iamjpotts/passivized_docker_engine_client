@@ -33,10 +33,7 @@ url = "2.3"
 [dev-dependencies]
 backoff = { version = "0.4", features = ["futures", "tokio"] }
 http = "0.2"
-hyper = { version = "0.14", features = ["client", "http1", "http2"] }
-hyper-tls = "0.5"
 itertools = "0.11"
-log = "0.4"
 mockito = "1.0"
 native-tls = "0.2"
 openssl = "0.10"
