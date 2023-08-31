@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::iter::{FromIterator, zip};
 use serde::{Deserialize, Deserializer};
+use serde::de::{DeserializeOwned, Error};
 use serde_json::Value;
 use crate::model::Unit;
 
@@ -10,6 +11,62 @@ pub(crate) fn dz_empty_as_none<'de, D>(deserializer: D) -> Result<Option<String>
 {
     let deserialized: Option<String> = Option::deserialize(deserializer)?;
     let result = deserialized.filter(|v| !v.is_empty());
+    Ok(result)
+}
+
+/// Treat empty JSON map {} the same as being null or absent.
+pub(crate) fn dz_empty_object_as_none<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: 'de + DeserializeOwned,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Parsed<U> {
+        // At least the minimum required fields are present.
+        AllRequiredFields(U),
+
+        // Some required fields missing, or an empty json map, or a wrong type altogether, such as a string.
+        Other(Value)
+    }
+
+    let result = match Option::<Parsed<T>>::deserialize(deserializer)? {
+        None => None,
+        Some(pa) => match pa {
+            Parsed::AllRequiredFields(value) => Some(value),
+            Parsed::Other(value) => {
+                let wrong = match value {
+                    Value::Object(other) => {
+                        if other.is_empty() {
+                            None
+                        }
+                        else {
+                            Some(Value::Object(other))
+                        }
+                    },
+                    other => Some(other)
+                };
+
+                match wrong {
+                    None => None,
+                    Some(other) => {
+                        let message = match serde_json::from_value::<T>(other) {
+                            Ok(_) => {
+                                // This should never happen, but if it does, fallback to a reasonable error message.
+                                format!("Invalid input for {}", std::any::type_name::<T>())
+                            },
+                            Err(problem) => {
+                                format!("{problem} for {}", std::any::type_name::<T>())
+                            }
+                        };
+
+                        return Err(Error::custom(message));
+                    }
+                }
+            }
+        }
+    };
+
     Ok(result)
 }
 
@@ -143,6 +200,122 @@ mod test_dz_empty_as_none {
         assert_eq!(Some("bar".into()), parsed.foo);
     }
 
+}
+
+#[cfg(test)]
+mod test_dz_empty_object_as_none {
+    use serde::Deserialize;
+    use serde_json::error::Category;
+    use super::dz_empty_object_as_none;
+
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct Foo {
+        pub bar: String,
+        pub zzz: Option<String>
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct HasFoo {
+        #[serde(default, deserialize_with = "dz_empty_object_as_none")]
+        pub foo: Option<Foo>
+    }
+
+    #[test]
+    fn when_absent() {
+        const TEXT: &str = "{}";
+
+        let parse_result: serde_json::Result<HasFoo> = serde_json::from_str(TEXT);
+        let parsed = parse_result.unwrap();
+
+        assert_eq!(None, parsed.foo);
+    }
+
+    #[test]
+    fn when_empty() {
+        const TEXT: &str = "
+        {
+            \"foo\": {}
+        }";
+
+        let parse_result: serde_json::Result<HasFoo> = serde_json::from_str(TEXT);
+        let parsed = parse_result.unwrap();
+
+        assert_eq!(None, parsed.foo);
+    }
+
+    #[test]
+    fn when_null() {
+        const TEXT: &str = "
+        {
+            \"foo\": null
+        }";
+
+        let parse_result: serde_json::Result<HasFoo> = serde_json::from_str(TEXT);
+        let parsed = parse_result.unwrap();
+
+        assert_eq!(None, parsed.foo);
+    }
+
+    #[test]
+    fn when_populated() {
+        const TEXT: &str = "
+        {
+            \"foo\": {
+                \"bar\": \"qux\"
+            }
+        }";
+
+        let parse_result: serde_json::Result<HasFoo> = serde_json::from_str(TEXT);
+        let parsed = parse_result.unwrap();
+
+        assert_eq!(Some(Foo { bar: "qux".into(), zzz: None }), parsed.foo);
+    }
+
+    #[test]
+    fn when_missing_required_field() {
+        // Provide the optional field but not the required field
+        const TEXT: &str = "
+        {
+            \"foo\": {
+                \"zzz\": \"abc\"
+            }
+        }";
+
+        let parse_result: serde_json::Result<HasFoo> = serde_json::from_str(TEXT);
+        let failure = parse_result.unwrap_err();
+        let failure_msg = format!("{failure}");
+
+        assert_eq!(Category::Data, failure.classify());
+
+        {
+            let expected = "bar";
+            assert!(failure_msg.contains(expected), "Should contain {}: {}", expected, failure_msg);
+        }
+
+        {
+            let expected = std::any::type_name::<Foo>();
+            assert!(failure_msg.contains(expected), "Should contain {}: {}", expected, failure_msg);
+        }
+    }
+
+    #[test]
+    fn when_wrong_type() {
+        const TEXT: &str = "
+        {
+            \"foo\": \"ooga booga booga\"
+        }";
+
+        let parse_result: serde_json::Result<HasFoo> = serde_json::from_str(TEXT);
+        let failure = parse_result.unwrap_err();
+        let failure_msg = format!("{failure}");
+
+        assert_eq!(Category::Data, failure.classify());
+
+        {
+            let expected = std::any::type_name::<Foo>();
+            assert!(failure_msg.contains(expected), "Should contain {}: {}", expected, failure_msg);
+        }
+    }
 }
 
 #[cfg(test)]

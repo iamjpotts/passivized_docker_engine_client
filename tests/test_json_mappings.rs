@@ -116,6 +116,27 @@ pub mod container {
 
 }
 
+pub mod containers {
+    use passivized_docker_engine_client::responses::ListedContainer;
+
+    #[test]
+    fn parse_list_with_container_without_ipv4_address() {
+        let text = super::fixtures::json("container_list_without_ipv4.json");
+        let actual: Vec<ListedContainer> = serde_json::from_str(&text)
+            .unwrap();
+
+        // Empty
+        assert_eq!(None, actual[0].network_settings.networks.get("blinky_default").unwrap().ipam_config);
+
+        // Null
+        assert_eq!(None, actual[1].network_settings.networks.get("ups_default").unwrap().ipam_config);
+
+        // Populated
+        assert_eq!("10.0.0.230", actual[2].network_settings.networks.get("locallan").unwrap().ipam_config.as_ref().unwrap().ipv4_address);
+    }
+
+}
+
 pub mod ipam_config {
     use passivized_docker_engine_client::model::ContainerIpamConfig;
 

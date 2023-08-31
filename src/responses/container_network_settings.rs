@@ -2,14 +2,14 @@ use std::collections::HashMap;
 use serde::Deserialize;
 
 use crate::model::{ContainerIpamConfig, PortBinding};
-use crate::imp::serde::dz_hashmap_of_nullable;
+use crate::imp::serde::{dz_empty_object_as_none, dz_hashmap_of_nullable};
 
 /// See https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerCreate
 /// and https://docs.docker.com/engine/api/v1.41/#tag/Container/operation/ContainerInspect
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 pub struct Network {
 
-    #[serde(rename = "IPAMConfig", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "IPAMConfig", skip_serializing_if = "Option::is_none", deserialize_with="dz_empty_object_as_none")]
     pub ipam_config: Option<ContainerIpamConfig>,
 
     #[serde(rename = "Links", skip_serializing_if = "Option::is_none")]
