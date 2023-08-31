@@ -43,7 +43,7 @@ openssl = "0.10"
 passivized_htpasswd = "0.0.5"
 passivized_test_support = "0.0.10"
 rand = "0.8"
-simple_logger = { version = "4.0", default-features = false, features = ["timestamps", "threads"] }
+simple_logger = { version = "4.2", default-features = false, features = ["timestamps", "threads"] }
 tar = "0.4"
 thiserror = "1.0"
 tempfile = "3.8"
