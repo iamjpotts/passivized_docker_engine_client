@@ -1,0 +1,165 @@
+[
+    {
+        "Command": "python main.py",
+        "Created": 1692673687,
+        "HostConfig": {
+            "NetworkMode": "blinky_default"
+        },
+        "Id": "e8e2b0f80d77a1aab26546ae691a629a2d00d6aa7d65c8773340f092e3edd032",
+        "Image": "foo/blinky:local-latest",
+        "ImageID": "sha256:4649d22d2501661eb8c58fd0e177133160ae236c8ccb08bfe8bd2bd9eff5dace",
+        "Labels": {
+            "com.docker.compose.config-hash": "c21a72af08097907172ade488901e1c7207db3da6741e2ced4d59e07a4ea1ea7",
+            "com.docker.compose.container-number": "1",
+            "com.docker.compose.oneoff": "False",
+            "com.docker.compose.project": "blinky",
+            "com.docker.compose.project.config_files": "docker-compose.yaml",
+            "com.docker.compose.service": "blinky",
+            "com.docker.compose.version": "1.29.1"
+        },
+        "Mounts": [],
+        "Names": [
+            "/blinky_blinky_1"
+        ],
+        "NetworkSettings": {
+            "Networks": {
+                "blinky_default": {
+                    "Aliases": null,
+                    "DriverOpts": null,
+                    "EndpointID": "c1921f3ce2b63afa3cb4b525cea3832ecae2c7d7713bc9fe8b5f0bec549c49da",
+                    "Gateway": "172.18.0.1",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "IPAMConfig": {},
+                    "IPAddress": "172.18.0.2",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "Links": null,
+                    "MacAddress": "02:42:ac:12:00:02",
+                    "NetworkID": "07d3bb9a62e7136a96fafcab9c4234e3b93bf815ad63b4efb4552999867a421b"
+                }
+            }
+        },
+        "Ports": [],
+        "State": "running",
+        "Status": "Up 8 days"
+    },
+    {
+        "Command": "/bin/sh -c /usr/local/bin/entrypoint.sh",
+        "Created": 1678232762,
+        "HostConfig": {
+            "NetworkMode": "ups_default"
+        },
+        "Id": "96891e1b784d525b370ccb3ecdd9b95bf61ed9132cf0512c2487f8fca958b37e",
+        "Image": "instantlinux/nut-upsd:latest",
+        "ImageID": "sha256:6340001d4f35decaafaee60c16ede82e9923e47e5594b2a64297682495afd2a8",
+        "Labels": {
+            "com.docker.compose.config-hash": "9b5e875ac389932a614b016adb53523f8b32800bf06dfd8b7f137fd9932fd254",
+            "com.docker.compose.container-number": "1",
+            "com.docker.compose.oneoff": "False",
+            "com.docker.compose.project": "ups",
+            "com.docker.compose.project.config_files": "docker-compose.yml",
+            "com.docker.compose.service": "app",
+            "com.docker.compose.version": "1.29.1",
+            "org.label-schema.build-date": "2022-11-10T16:21:52Z",
+            "org.label-schema.name": "nut-upsd",
+            "org.label-schema.vcs-ref": "8018400b0ce021d9d48fa5cad5581d14d11d53d3",
+            "org.label-schema.vcs-url": "https://github.com/instantlinux/docker-tools"
+        },
+        "Mounts": [],
+        "Names": [
+            "/ups_app_1"
+        ],
+        "NetworkSettings": {
+            "Networks": {
+                "ups_default": {
+                    "Aliases": null,
+                    "DriverOpts": null,
+                    "EndpointID": "9ac3eeecda29747a3aa807328154a537c2dc13b8e93c12f8d94c9adb829c6f5c",
+                    "Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "IPAMConfig": null,
+                    "IPAddress": "172.24.0.2",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "Links": null,
+                    "MacAddress": "02:42:ac:18:00:02",
+                    "NetworkID": "ed93a534800baeaf530bbb45060964746449fb00217b567a6cdbb7b8e599c9cf"
+                }
+            }
+        },
+        "Ports": [],
+        "State": "exited",
+        "Status": "Exited (137) 5 months ago"
+    },
+    {
+        "Command": "/init",
+        "Created": 1653940927,
+        "HostConfig": {
+            "NetworkMode": "locallan"
+        },
+        "Id": "9a1bad44b3b411b135bcb221acefcff4a571923be40113218be9648f60ce45c3",
+        "Image": "foo/ssh-server:build-2",
+        "ImageID": "sha256:4db8f83889f5f8d097efdb3057a9a8d638da3c38d9b66dc18ec49d18c8999b96",
+        "Labels": {
+            "build_version": "Linuxserver.io version:- 8.8_p1-r1-ls80 Build-date:- 2022-05-15T09:30:13+02:00",
+            "com.docker.compose.config-hash": "6016cd939204cc3f7307010923ceb7d92cabc6b706e05d4b05415e9612d928d1",
+            "com.docker.compose.container-number": "1",
+            "com.docker.compose.oneoff": "False",
+            "com.docker.compose.project": "bdt-backups",
+            "com.docker.compose.project.config_files": "docker-compose.yml",
+            "com.docker.compose.service": "server",
+            "com.docker.compose.version": "1.29.1",
+            "maintainer": "aptalca",
+            "org.opencontainers.image.authors": "linuxserver.io",
+            "org.opencontainers.image.created": "2022-05-15T09:30:13+02:00",
+            "org.opencontainers.image.description": "[Openssh-server](https://www.openssh.com/) is a sandboxed environment that allows ssh access without giving keys to the entire server.  Giving ssh access via private key often means giving full access to the server. This container creates a limited and sandboxed environment that others can ssh into.  The users only have access to the folders mapped and the processes running inside this container.",
+            "org.opencontainers.image.documentation": "https://docs.linuxserver.io/images/docker-openssh-server",
+            "org.opencontainers.image.ref.name": "7037eb6a3cb0fc9089c85c9d0cab7f093522b2d9",
+            "org.opencontainers.image.revision": "7037eb6a3cb0fc9089c85c9d0cab7f093522b2d9",
+            "org.opencontainers.image.source": "https://github.com/linuxserver/docker-openssh-server",
+            "org.opencontainers.image.title": "Openssh-server",
+            "org.opencontainers.image.url": "https://github.com/linuxserver/docker-openssh-server/packages",
+            "org.opencontainers.image.vendor": "linuxserver.io",
+            "org.opencontainers.image.version": "8.8_p1-r1-ls80"
+        },
+        "Mounts": [
+            {
+                "Destination": "/volumes/vbackups",
+                "Mode": "rw",
+                "Propagation": "rprivate",
+                "RW": true,
+                "Source": "/mnt/foo/vbackups",
+                "Type": "bind"
+            }
+        ],
+        "Names": [
+            "/bdt-backups_server_1"
+        ],
+        "NetworkSettings": {
+            "Networks": {
+                "locallan": {
+                    "Aliases": null,
+                    "DriverOpts": null,
+                    "EndpointID": "3989b28c2689187b5aeb0879669e8a6da71cc59a26f8658f52a11117ce4df2e7",
+                    "Gateway": "10.0.0.1",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "IPAMConfig": {
+                        "IPv4Address": "10.0.0.230"
+                    },
+                    "IPAddress": "10.0.0.230",
+                    "IPPrefixLen": 24,
+                    "IPv6Gateway": "",
+                    "Links": null,
+                    "MacAddress": "02:42:0a:00:00:e6",
+                    "NetworkID": "4ea91a527199f0a0a58ebbcf57c9aaec255e1d2e04c2880fbdc55bee08652bf7"
+                }
+            }
+        },
+        "Ports": [],
+        "State": "running",
+        "Status": "Up 3 weeks"
+    }
+]
