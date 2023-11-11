@@ -222,18 +222,24 @@ async fn test_build_fails_invalid_from() {
         .find(|item| item.error.is_some())
         .unwrap();
 
-    #[cfg(not(target_os = "macos"))]
-    const EXPECTED_FIRST: &str = "dial tcp: lookup doesnotexist.locallan";
-    #[cfg(not(target_os = "macos"))]
-    const EXPECTED_SECOND: &str = "no such host";
+    let allowed = [
+        // Linux and Windows variant
+        ("dial tcp: lookup doesnotexist.locallan", "no such host"),
+        // Mac variant on GitHub runner
+        ("Failed to lookup host", "doesnotexist.locallan"),
+        // Mac variant on laptop
+        ("resolving host doesnotexist.locallan", "no such host")
+    ];
 
-    #[cfg(target_os = "macos")]
-    const EXPECTED_FIRST: &str = "Failed to lookup host";
-    #[cfg(target_os = "macos")]
-    const EXPECTED_SECOND: &str = "doesnotexist.locallan";
+    let error_error = error.error.as_ref().unwrap();
+    let error_detail = &error.error_detail.as_ref().unwrap().message;
 
-    assert_contains_both("error.error", EXPECTED_FIRST, EXPECTED_SECOND, error.error.as_ref().unwrap());
-    assert_contains_both("error_detail", EXPECTED_FIRST, EXPECTED_SECOND, &error.error_detail.as_ref().unwrap().message);
+    let (a, b) = allowed
+        .into_iter()
+        .find(|(a, b)| error_error.contains(a) && error_error.contains(b))
+        .expect(&format!("Did not find any allowed matches for error.error: {error_error}"));
+
+    assert_contains_both("error_detail", a, b, &error_detail);
 }
 
 fn assert_contains_both(what: &str, expected_first: &str, expected_second: &str, actual: &str) {
