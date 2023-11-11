@@ -307,11 +307,21 @@ async fn test_get_top_processes() {
     println!("Titles: {:?}", top.titles);
     println!("Processes: {:?}", top.processes);
 
+    #[cfg(target_os = "macos")]
+    fn is_matching_heading(heading: &str) -> bool {
+        heading == web::EXPECTED_PROCESS_HEADING || heading == "COMMAND"
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn is_matching_heading(heading: &str) -> bool {
+        heading == web::EXPECTED_PROCESS_HEADING
+    }
+
     let (index, _) = top
         .titles
         .iter()
         .enumerate()
-        .find(|(_, item)| *item == &(web::EXPECTED_PROCESS_HEADING.to_string()))
+        .find(|(_, item)| is_matching_heading(item))
         .unwrap();
 
     let cmd_found = top
