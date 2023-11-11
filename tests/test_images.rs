@@ -11,8 +11,11 @@ use test_utils::{content_type, random_name};
 use passivized_docker_engine_client::client::DOCKER_ENGINE_VERSION;
 use passivized_docker_engine_client::DockerEngineClient;
 use passivized_docker_engine_client::errors::DecUseError;
-use passivized_docker_engine_client::model::{Tar, TsStreamLine};
+use passivized_docker_engine_client::model::Tar;
 use passivized_docker_engine_client::requests::BuildImageRequest;
+
+#[cfg(not(windows))]
+use passivized_docker_engine_client::model::TsStreamLine;
 
 const MISSING_IMAGE: &str = "does_not_exist";
 const MISSING_TAG: &str = "does_not_exist";

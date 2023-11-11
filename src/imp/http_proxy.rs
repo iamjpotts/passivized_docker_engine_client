@@ -43,12 +43,20 @@ impl DockerEngineHttpClient {
             .map_err(DecLibraryError::HttpRequestBuilderError)
     }
 
+    #[cfg(not(windows))]
+    fn build_put(uri: &str, content_type: &str, content: Vec<u8>) -> Result<Request<hyper::Body>, DecLibraryError> {
+        Request::put(uri)
+            .header(CONTENT_TYPE, content_type)
+            .body(content.into())
+            .map_err(DecLibraryError::HttpRequestBuilderError)
+    }
+
     fn build_post_json<B: Serialize>(uri: &str, body: &B) -> Result<Request<hyper::Body>, DecLibraryError> {
         let json = serde_json::to_string(body)
             .map_err(DecLibraryError::RequestSerializationError)?;
 
         Request::post(uri.to_string())
-            .header(hyper::header::CONTENT_TYPE, content_type::JSON)
+            .header(CONTENT_TYPE, content_type::JSON)
             .body(hyper::Body::from(json))
             .map_err(DecLibraryError::HttpRequestBuilderError)
     }
@@ -131,6 +139,11 @@ impl DockerEngineHttpClient {
             .unwrap_or_default();
 
         self.build_request(uri, |u| Self::build_post_with_auth_config(u, &auth_config, content_type, body))
+    }
+
+    #[cfg(not(windows))]
+    pub fn put<U: ToString>(&self, uri: U, content_type: &str, content: Vec<u8>) -> Result<DockerEngineHttpRequest, DecLibraryError> {
+        self.build_request(uri, |u| Self::build_put(u, content_type, content))
     }
 
     fn x_registry_auth(registry_auth: &Option<RegistryAuth>) -> Result<Option<String>, DecLibraryError> {

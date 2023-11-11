@@ -55,4 +55,12 @@ impl <'a> DecContainerFiles<'a> {
             .parse_with(|r| Ok(Tar(r.body.to_vec())))
     }
 
+    #[cfg(not(windows))]
+    pub async fn put<P: Into<String>>(&self, path: P, content: Tar) -> Result<(), DecUseError> {
+        let uri = self.client.url.containers().files(self.container_id).put(path);
+        let response = self.client.http.put(uri, "application/x-tar", content.0)?.execute().await?;
+
+        response
+            .assert_unit_status(StatusCode::OK)
+    }
 }

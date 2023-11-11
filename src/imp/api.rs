@@ -408,6 +408,10 @@ impl DockerEngineApiPathContainerFiles {
         self.base.at(format!("/containers/{}/archive?path={}", self.container_name_or_id, path.into()))
     }
 
+    #[cfg(not(windows))]
+    pub fn put<P: Into<String>>(&self, path: P) -> String {
+        self.base.at(format!("/containers/{}/archive?path={}", self.container_name_or_id, path.into()))
+    }
 }
 
 pub(crate) struct DockerEngineApiPathImages {
