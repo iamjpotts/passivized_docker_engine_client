@@ -77,7 +77,6 @@ jobs:
         toolchain:
           - 1.68
           - beta
-          - nightly
           - stable
     runs-on: ${{ matrix.os }}
     steps:
