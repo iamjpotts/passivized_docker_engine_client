@@ -463,7 +463,7 @@ impl HostConfig {
 
         self.port_bindings
             .entry(container_port.into())
-            .or_insert_with(Default::default)
+            .or_default()
             .push(binding);
 
         self
