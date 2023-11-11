@@ -12,7 +12,6 @@ yanked = "deny"
 [licenses]
 allow = [
     "Apache-2.0",
-    "BSD-3-Clause",
     "MIT",
     "MPL-2.0",
     "Unicode-DFS-2016",
@@ -29,7 +28,9 @@ deny = [
 ]
 multiple-versions = "warn"
 skip = []
-skip-tree = []
+skip-tree = [
+    { name = "redox_syscall" }
+]
 wildcards = "warn"
 
 [sources]
