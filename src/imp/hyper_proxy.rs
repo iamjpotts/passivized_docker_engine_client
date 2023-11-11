@@ -97,7 +97,7 @@ impl HyperHttpClientConfig {
         Self::Unix {
             client: Client::builder()
                 .pool_max_idle_per_host(POOL_MAX_IDLE_PER_HOST)
-                .build::<_, Body>(UnixConnector::default())
+                .build::<_, Body>(UnixConnector {})
         }
     }
 
