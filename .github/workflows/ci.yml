@@ -15,7 +15,7 @@ jobs:
           - ubuntu-20.04
           - windows-2022
         toolchain:
-          - 1.68
+          - "1.70"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -52,7 +52,7 @@ jobs:
         os:
           - macOS-latest
         toolchain:
-          - 1.68
+          - "1.70"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -75,8 +75,7 @@ jobs:
         os:
           - ubuntu-20.04
         toolchain:
-          - 1.68
-          - beta
+          - "1.70"
           - stable
     runs-on: ${{ matrix.os }}
     steps:
@@ -97,7 +96,7 @@ jobs:
         os:
           - windows-2022
         toolchain:
-          - 1.68
+          - "1.70"
           - stable
     runs-on: ${{ matrix.os }}
     steps:
