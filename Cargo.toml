@@ -38,7 +38,7 @@ mockito = "1.2"
 native-tls = "0.2"
 openssl = "0.10"
 passivized_htpasswd = "0.0.6"
-passivized_test_support = "0.0.10"
+passivized_test_support = "0.0.11"
 rand = "0.8"
 simple_logger = { version = "4.3", default-features = false, features = ["timestamps", "threads"] }
 tar = "0.4"
