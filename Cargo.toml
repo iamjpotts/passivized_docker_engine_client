@@ -12,7 +12,7 @@ license = "MPL-2.0"
 name = "passivized_docker_engine_client"
 readme = "README.md"
 repository = "https://github.com/iamjpotts/passivized_docker_engine_client"
-rust-version = "1.68"
+rust-version = "1.70"
 version = "0.0.10-alpha"
 
 [dependencies]
@@ -34,13 +34,13 @@ url = "2.3"
 backoff = { version = "0.4", features = ["futures", "tokio"] }
 http = "0.2"
 itertools = "0.12"
-mockito = "1.0"
+mockito = "1.2"
 native-tls = "0.2"
 openssl = "0.10"
-passivized_htpasswd = "0.0.5"
+passivized_htpasswd = "0.0.6"
 passivized_test_support = "0.0.10"
 rand = "0.8"
-simple_logger = { version = "4.2", default-features = false, features = ["timestamps", "threads"] }
+simple_logger = { version = "4.3", default-features = false, features = ["timestamps", "threads"] }
 tar = "0.4"
 thiserror = "1.0"
 tempfile = "3.8"
