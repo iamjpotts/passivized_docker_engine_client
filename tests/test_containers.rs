@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use const_str::concat;
-use http::StatusCode;
+use hyper::StatusCode;
 
 #[cfg(not(target_os = "macos"))]
 use log::{info, warn};
