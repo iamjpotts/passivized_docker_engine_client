@@ -65,9 +65,7 @@ jobs:
       # Only have one Mac build because Mac build setup is flaky
       matrix:
         os:
-          # 13 and 14 are missing colima
-          # 12 has it, but it is now unreliable, see https://github.com/abiosoft/colima/issues/1047
-          - macOS-12
+          - macos-15-intel
         toolchain:
           - "1.89"
     runs-on: ${{ matrix.os }}
@@ -77,12 +75,13 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
       - run: brew install docker
-      #- run: colima start
-      #- run: docker version
-      #- run: docker info
-      #- run: echo "DOCKER_HOST=$HOME/.colima/docker.sock" >> "$GITHUB_ENV"
+      - run: brew install colima
+      - run: colima start
+      - run: docker version
+      - run: docker info
+      - run: echo "DOCKER_HOST=$HOME/.colima/docker.sock" >> "$GITHUB_ENV"
       - run: cargo test --no-run
-      #- run: cargo test --no-fail-fast
+      - run: cargo test --no-fail-fast
     timeout-minutes: 20
 
   test-nix:
