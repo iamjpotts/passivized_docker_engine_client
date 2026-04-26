@@ -123,6 +123,9 @@ jobs:
       # See https://docs.rs/crate/openssl-sys/0.9.36
       - run: vcpkg install openssl:x64-windows-static-md
       - run: vcpkg integrate install
+      - run: Get-Command docker
+      - run: Get-Service docker
+      - run: sc.exe query docker
       - run: docker version
       - run: Stop-Service docker
       - run: |
