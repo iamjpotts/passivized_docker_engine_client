@@ -61,8 +61,9 @@ jobs:
 
   test-mac:
     name: Cargo test on Mac
+    # docker on mac requires api version 1.44 or newer; this client uses v1.41, and v1.44 has breaking changes
+    if: false
     strategy:
-      # Only have one Mac build because Mac build setup is flaky
       matrix:
         os:
           - macos-15-intel
