@@ -1,6 +1,11 @@
 
 [advisories]
-ignore = []
+ignore = [
+    # instant is now unmaintained
+    "RUSTSEC-2024-0384",
+    # backoff is now unmaintained
+    "RUSTSEC-2025-0012",
+]
 version = 2
 
 # This library uses the MPL-2 license.
@@ -9,10 +14,9 @@ version = 2
 [licenses]
 allow = [
     "Apache-2.0",
-    "BSD-3-Clause",
     "MIT",
     "MPL-2.0",
-    "Unicode-DFS-2016",
+    "Unicode-3.0",
 ]
 confidence-threshold = 1.0
 version = 2
