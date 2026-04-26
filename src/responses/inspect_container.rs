@@ -160,7 +160,8 @@ pub struct InspectedContainerConfig {
     #[serde(rename = "MacAddress")]
     pub mac_address: Option<String>,
 
-    #[serde(rename = "OnBuild", deserialize_with = "dz_vec")]
+    /// Not always present for images built with buildkit
+    #[serde(rename = "OnBuild", default, deserialize_with = "dz_vec")]
     pub on_build: Vec<String>,
 
     #[serde(rename = "Labels")]
