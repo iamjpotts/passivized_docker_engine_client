@@ -15,6 +15,10 @@ repository = "https://github.com/iamjpotts/passivized_docker_engine_client"
 rust-version = "1.88"
 version = "0.0.10-alpha"
 
+[lints.clippy]
+to_string_trait_impl = "allow"
+uninlined_format_args = "allow"
+
 [dependencies]
 base64 = "0.21"
 byteorder = "1.4"
