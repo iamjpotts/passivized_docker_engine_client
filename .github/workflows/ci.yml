@@ -108,6 +108,8 @@ jobs:
 
   test-windows:
     name: Cargo test on Windows
+    # docker on windows requires api version 1.44 or newer; this client uses v1.41, and v1.44 has breaking changes
+    if: false
     strategy:
       matrix:
         os:
@@ -126,11 +128,11 @@ jobs:
       - run: Get-Command docker
       - run: Get-Service docker
       - run: sc.exe query docker
-      - run: docker version
       - run: Stop-Service docker
       - run: |
           Set-Content -Path "C:\ProgramData\Docker\config\daemon.json" -Value "{`"hosts`": [`"tcp://127.0.0.1:2375`"]}"
       - run: Start-Service docker
+      - run: docker version
       - run: cargo test --no-run
       - run: |
           $env:DOCKER_HOST = 'http://localhost:2375'; cargo test --no-fail-fast
